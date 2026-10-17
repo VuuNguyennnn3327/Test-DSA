@@ -252,13 +252,22 @@
 
   // Preset tile providers catalog for Vietnam and international basemaps
   const TILE_PROVIDERS = {
-    // 1. OpenStreetMap Standard: Community OpenStreetMap servers - 100% geometric alignment with GoRide OSM routing graph & OSRM
+    // 1. Google Maps Vietnam: Official Google Maps tile server with Vietnam localization (hl=vi&gl=VN)
+    // Ensures full compliance with Vietnamese sovereignty and geographical representation.
+    google: {
+      name: 'Bản đồ Google Việt Nam',
+      url: 'https://{s}.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}',
+      attribution: '&copy; Bản đồ Google Việt Nam',
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    },
+    // Aliasing 'osm' to Google Maps Vietnam to prevent accidental disputed boundary tiles
     osm: {
-      name: 'OpenStreetMap Standard',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-      subdomains: ['a', 'b', 'c']
+      name: 'Bản đồ Google Việt Nam',
+      url: 'https://{s}.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}',
+      attribution: '&copy; Bản đồ Google Việt Nam',
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     },
     // 2. VietMap API: Vietnamese national provider (requires ?apikey=...)
     vietmap: {
@@ -276,7 +285,7 @@
       maxZoom: 20,
       subdomains: []
     },
-    // 4. Esri World Street Map: Global GIS provider (Note: road layer in VN has known 15-25m datum offset vs OSM)
+    // 4. Esri World Street Map: Global GIS provider
     esri: {
       name: 'Esri World Street Map',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -303,10 +312,16 @@
         throw new Error(`[MapController] Container element "#${this.containerId}" not found in DOM.`);
       }
 
-      // Resolve tile provider configuration (Default: 'osm' for pixel-perfect 1:1 OSM road network alignment)
-      const storedProvider = typeof localStorage !== 'undefined' ? localStorage.getItem('goride_map_provider') : null;
-      const activeProviderKey = options.provider || storedProvider || (typeof window !== 'undefined' && window.GORIDE_MAP_PROVIDER) || 'osm';
-      const providerConfig = TILE_PROVIDERS[activeProviderKey] || TILE_PROVIDERS.osm;
+      // Resolve tile provider configuration (Default: 'google' for compliant Vietnam basemap)
+      let storedProvider = typeof localStorage !== 'undefined' ? localStorage.getItem('goride_map_provider') : null;
+      if (storedProvider === 'osm') {
+        storedProvider = 'google';
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('goride_map_provider', 'google');
+        }
+      }
+      const activeProviderKey = options.provider || storedProvider || (typeof window !== 'undefined' && window.GORIDE_MAP_PROVIDER) || 'google';
+      const providerConfig = TILE_PROVIDERS[activeProviderKey] || TILE_PROVIDERS.google;
 
       let resolvedTileUrl = options.tileUrl || providerConfig.url;
       const apiKey = options.apiKey || (typeof localStorage !== 'undefined' && localStorage.getItem('goride_map_apikey')) || (typeof window !== 'undefined' && window.GORIDE_MAP_APIKEY);
@@ -319,15 +334,17 @@
           center: DEFAULT_CENTER,
           zoom: DEFAULT_ZOOM,
           minZoom: 5,
-          maxZoom: providerConfig.maxZoom || 19,
+          maxZoom: providerConfig.maxZoom || 20,
           coordinatesElementId: null,
           zoomControl: true,
           attributionControl: true,
           provider: activeProviderKey,
+
           tileUrl: resolvedTileUrl,
           tileAttribution: options.tileAttribution || providerConfig.attribution,
-          fallbackTileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: options.subdomains || providerConfig.subdomains || [],
+          fallbackTileUrl: 'https://{s}.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}',
+          
+          subdomains: options.subdomains || providerConfig.subdomains || ['mt0', 'mt1', 'mt2', 'mt3'],
           keepBuffer: 3,
           updateWhenIdle: true,
           updateWhenZooming: false,
@@ -466,7 +483,7 @@
         // Never trigger destructive setUrl() on transient panning hiccups
         if (this._tileErrorCount >= 12 && this._tileLoadCount < 3 && !this._hasFailedOver) {
           this._hasFailedOver = true;
-          const fallbackKey = (this.options.provider === 'osm') ? 'esri' : 'osm';
+          const fallbackKey = (this.options.provider === 'google') ? 'esri' : 'google';
           console.warn(`[MapController] Primary tile server (${this.options.provider}) unreachable. Failing over to ${fallbackKey}.`);
           this.setProvider(fallbackKey);
           return;
@@ -556,11 +573,12 @@
 
     /**
      * Dynamically switches the active map tile provider.
-     * @param {'osm'|'vietmap'|'map4d'|'esri'} providerKey
+     * @param {'google'|'vietmap'|'map4d'|'esri'|'osm'} providerKey
      * @param {string} [apiKey]
      */
     setProvider(providerKey, apiKey = null) {
-      const config = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.osm;
+      if (providerKey === 'osm') providerKey = 'google';
+      const config = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.google;
       let url = config.url;
       const resolvedKey = apiKey || (typeof localStorage !== 'undefined' && localStorage.getItem('goride_map_apikey')) || (typeof window !== 'undefined' && window.GORIDE_MAP_APIKEY);
       if (resolvedKey) {
@@ -570,8 +588,8 @@
       this.options.provider = providerKey;
       this.options.tileUrl = url;
       this.options.tileAttribution = config.attribution;
-      this.options.subdomains = config.subdomains || [];
-      this.options.maxZoom = config.maxZoom || 19;
+      this.options.subdomains = config.subdomains || ['mt0', 'mt1', 'mt2', 'mt3'];
+      this.options.maxZoom = config.maxZoom || 20;
 
       if (this.tileLayer && this.map) {
         this.map.removeLayer(this.tileLayer);
@@ -612,7 +630,7 @@
           div.setAttribute('title', 'Chọn nhà cung cấp bản đồ');
 
           const providers = [
-            { key: 'osm', label: '🗺️ OSM Chuẩn' },
+            { key: 'google', label: '🇻🇳 Google Maps VN' },
             { key: 'vietmap', label: '🇻🇳 VietMap' },
             { key: 'map4d', label: '🇻🇳 Map4D' },
             { key: 'esri', label: '🌍 Esri' }
@@ -651,7 +669,7 @@
         let key = (typeof localStorage !== 'undefined' && localStorage.getItem('goride_map_apikey')) || (typeof window !== 'undefined' && window.GORIDE_MAP_APIKEY);
         if (!key) {
           const provName = providerKey === 'vietmap' ? 'VietMap' : 'Map4D';
-          const inputKey = window.prompt(`Để kích hoạt bản đồ ${provName}, vui lòng nhập API Key của bạn:\n(Hoặc nhấn Hủy để quay lại OpenStreetMap chuẩn không cần key)`);
+          const inputKey = window.prompt(`Để kích hoạt bản đồ ${provName}, vui lòng nhập API Key của bạn:\n(Hoặc nhấn Hủy để quay lại Google Maps Việt Nam không cần key)`);
           if (inputKey && inputKey.trim()) {
             key = inputKey.trim();
             if (typeof localStorage !== 'undefined') {
