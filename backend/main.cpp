@@ -13,6 +13,7 @@
 #include "auth/auth_service.hpp"
 #include "dsa/dijkstra.hpp"
 #include "dsa/road_graph.hpp"
+#include "dsa/route_service.hpp"
 #include "dsa/spatial_grid.hpp"
 #include "server/http_server.hpp"
 #include "trip/trip_service.hpp"
@@ -226,215 +227,68 @@ int main(int argc, char* argv[]) {
             try { max_snap = std::stod(req.get_param("max_snap_m")); } catch (...) {}
         }
 
-        // 1. Query nearest road edge candidates (for high-precision centerline projection)
-        auto origin_edges = grid.find_k_nearest_edges(from_lat, from_lon, 5, max_snap);
-        auto dest_edges = grid.find_k_nearest_edges(to_lat, to_lon, 5, max_snap);
-
-        // Fallback candidate vertices
-        auto origin_nodes = grid.find_k_nearest_nodes(from_lat, from_lon, 5, max_snap);
-        auto dest_nodes = grid.find_k_nearest_nodes(to_lat, to_lon, 5, max_snap);
-
-        if (origin_edges.empty() && origin_nodes.empty()) {
-            std::ostringstream err;
-            err << "{\"success\":false,\"code\":\"ORIGIN_SNAP_FAILED\",\"error\":\"Origin location ("
-                << from_lat << ", " << from_lon << ") is farther than " << max_snap
-                << "m from any motorable OSM road.\"}";
-            res.set_json(err.str(), 422);
-            return;
-        }
-
-        if (dest_edges.empty() && dest_nodes.empty()) {
-            std::ostringstream err;
-            err << "{\"success\":false,\"code\":\"DESTINATION_SNAP_FAILED\",\"error\":\"Destination location ("
-                << to_lat << ", " << to_lon << ") is farther than " << max_snap
-                << "m from any motorable OSM road.\"}";
-            res.set_json(err.str(), 422);
-            return;
-        }
-
-        // 2. Shortest path routing with Dijkstra & Edge Snapping
-        auto start_route = std::chrono::high_resolution_clock::now();
-
-        bool route_found = false;
-        double best_total_cost = std::numeric_limits<double>::infinity();
-        double best_distance_m = 0.0;
-        size_t best_nodes_visited = 0;
-        std::vector<goride::dsa::NodeId> best_path_nodes;
-        std::vector<std::pair<double, double>> best_path_geometry; // (lat, lon)
-
-        double snap_orig_lat = 0.0, snap_orig_lon = 0.0, snap_orig_dist = 0.0;
-        std::string snap_orig_node_id;
-        double snap_dest_lat = 0.0, snap_dest_lon = 0.0, snap_dest_dist = 0.0;
-        std::string snap_dest_node_id;
-
-        // Try edge-based candidate pairs
-        if (!origin_edges.empty() && !dest_edges.empty()) {
-            size_t max_oe = std::min<size_t>(3, origin_edges.size());
-            size_t max_de = std::min<size_t>(3, dest_edges.size());
-
-            for (size_t oi = 0; oi < max_oe; ++oi) {
-                const auto& oe = origin_edges[oi];
-                for (size_t di = 0; di < max_de; ++di) {
-                    const auto& de = dest_edges[di];
-
-                    // Case A: Same directed edge, origin precedes destination
-                    if (oe.edge.u == de.edge.u && oe.edge.v == de.edge.v && oe.t <= de.t) {
-                        double drive_dist = (de.t - oe.t) * oe.edge.weight;
-                        double total_cost = drive_dist + oe.distance_m + de.distance_m;
-                        if (total_cost < best_total_cost) {
-                            best_total_cost = total_cost;
-                            best_distance_m = drive_dist;
-                            route_found = true;
-                            best_nodes_visited = 2;
-                            best_path_nodes = {oe.edge.u, oe.edge.v};
-                            best_path_geometry = {{oe.snap_lat, oe.snap_lon}, {de.snap_lat, de.snap_lon}};
-                            snap_orig_lat = oe.snap_lat; snap_orig_lon = oe.snap_lon; snap_orig_dist = oe.distance_m;
-                            snap_orig_node_id = std::to_string(oe.edge.u) + "_" + std::to_string(oe.edge.v);
-                            snap_dest_lat = de.snap_lat; snap_dest_lon = de.snap_lon; snap_dest_dist = de.distance_m;
-                            snap_dest_node_id = std::to_string(de.edge.u) + "_" + std::to_string(de.edge.v);
-                        }
-                        continue;
-                    }
-
-                    // Case B: General routing between edge endpoints
-                    goride::dsa::DijkstraResult d_res;
-                    if (oe.edge.v == de.edge.u) {
-                        d_res.found = true;
-                        d_res.total_distance = 0.0;
-                        d_res.nodes_visited = 1;
-                        const auto* mid_node = graph.get_node(oe.edge.v);
-                        if (mid_node) {
-                            d_res.path_geometry = {{mid_node->lat, mid_node->lon}};
-                            d_res.path_nodes = {oe.edge.v};
-                        }
-                    } else {
-                        d_res = goride::dsa::DijkstraRouter::find_shortest_path(graph, oe.edge.v, de.edge.u);
-                    }
-
-                    if (d_res.found) {
-                        double drive_dist = oe.dist_to_v_m + d_res.total_distance + de.dist_from_u_m;
-                        double total_cost = drive_dist + oe.distance_m + de.distance_m;
-                        if (total_cost < best_total_cost) {
-                            best_total_cost = total_cost;
-                            best_distance_m = drive_dist;
-                            route_found = true;
-                            best_nodes_visited = d_res.nodes_visited + 2;
-
-                            // Assemble path nodes
-                            best_path_nodes.clear();
-                            best_path_nodes.push_back(oe.edge.u);
-                            for (auto nid : d_res.path_nodes) {
-                                if (best_path_nodes.empty() || best_path_nodes.back() != nid) {
-                                    best_path_nodes.push_back(nid);
-                                }
-                            }
-                            if (best_path_nodes.empty() || best_path_nodes.back() != de.edge.v) {
-                                best_path_nodes.push_back(de.edge.v);
-                            }
-
-                            // Assemble continuous centerline geometry: [oe.snap] -> [intermediate nodes] -> [de.snap]
-                            best_path_geometry.clear();
-                            best_path_geometry.push_back({oe.snap_lat, oe.snap_lon});
-                            for (const auto& pt : d_res.path_geometry) {
-                                if (best_path_geometry.empty() ||
-                                    std::abs(best_path_geometry.back().first - pt.first) > 1e-6 ||
-                                    std::abs(best_path_geometry.back().second - pt.second) > 1e-6) {
-                                    best_path_geometry.push_back(pt);
-                                }
-                            }
-                            if (best_path_geometry.empty() ||
-                                std::abs(best_path_geometry.back().first - de.snap_lat) > 1e-6 ||
-                                std::abs(best_path_geometry.back().second - de.snap_lon) > 1e-6) {
-                                best_path_geometry.push_back({de.snap_lat, de.snap_lon});
-                            }
-
-                            snap_orig_lat = oe.snap_lat; snap_orig_lon = oe.snap_lon; snap_orig_dist = oe.distance_m;
-                            snap_orig_node_id = std::to_string(oe.edge.u) + "_" + std::to_string(oe.edge.v);
-                            snap_dest_lat = de.snap_lat; snap_dest_lon = de.snap_lon; snap_dest_dist = de.distance_m;
-                            snap_dest_node_id = std::to_string(de.edge.u) + "_" + std::to_string(de.edge.v);
-                        }
-                    }
-                }
+        auto route_res = goride::dsa::compute_shortest_route(graph, grid, from_lat, from_lon, to_lat, to_lon, max_snap);
+        if (!route_res.success) {
+            int status_code = 400;
+            if (route_res.status == goride::dsa::RouteComputeStatus::ORIGIN_SNAP_FAILED ||
+                route_res.status == goride::dsa::RouteComputeStatus::DESTINATION_SNAP_FAILED) {
+                status_code = 422;
+            } else if (route_res.status == goride::dsa::RouteComputeStatus::ROUTE_NOT_FOUND) {
+                status_code = 404;
+            } else if (route_res.status == goride::dsa::RouteComputeStatus::GRAPH_EMPTY) {
+                status_code = 503;
             }
-        }
-
-        // Fallback: Node-based candidate pairs if edge routing didn't yield a path
-        if (!route_found && !origin_nodes.empty() && !dest_nodes.empty()) {
-            size_t max_o = std::min<size_t>(3, origin_nodes.size());
-            size_t max_d = std::min<size_t>(3, dest_nodes.size());
-            for (size_t oi = 0; oi < max_o; ++oi) {
-                for (size_t di = 0; di < max_d; ++di) {
-                    auto cand_res = goride::dsa::DijkstraRouter::find_shortest_path(graph, origin_nodes[oi].node_id, dest_nodes[di].node_id);
-                    if (cand_res.found) {
-                        double total_cost = origin_nodes[oi].distance_m + cand_res.total_distance + dest_nodes[di].distance_m;
-                        if (total_cost < best_total_cost) {
-                            best_total_cost = total_cost;
-                            best_distance_m = cand_res.total_distance;
-                            route_found = true;
-                            best_nodes_visited = cand_res.nodes_visited;
-                            best_path_nodes = cand_res.path_nodes;
-                            best_path_geometry = cand_res.path_geometry;
-                            snap_orig_lat = origin_nodes[oi].lat; snap_orig_lon = origin_nodes[oi].lon; snap_orig_dist = origin_nodes[oi].distance_m;
-                            snap_orig_node_id = std::to_string(origin_nodes[oi].node_id);
-                            snap_dest_lat = dest_nodes[di].lat; snap_dest_lon = dest_nodes[di].lon; snap_dest_dist = dest_nodes[di].distance_m;
-                            snap_dest_node_id = std::to_string(dest_nodes[di].node_id);
-                        }
-                    }
-                }
-            }
-        }
-
-        auto end_route = std::chrono::high_resolution_clock::now();
-        double route_time_ms = std::chrono::duration<double, std::milli>(end_route - start_route).count();
-
-        if (!route_found) {
             std::ostringstream err;
-            err << "{\"success\":false,\"code\":\"ROUTE_NOT_FOUND\",\"error\":\"No valid motorable route found between coordinates.\",\"nodes_visited\":" << best_nodes_visited << "}";
-            res.set_json(err.str(), 404);
+            err << "{\"success\":false,\"code\":\"" << route_res.code << "\",\"error\":\"" << route_res.error << "\"";
+            if (route_res.nodes_visited > 0) {
+                err << ",\"nodes_visited\":" << route_res.nodes_visited;
+            }
+            err << "}";
+            res.set_json(err.str(), status_code);
             return;
         }
 
-        // 3. Format JSON response (GeoJSON coordinates: [longitude, latitude])
+        // Format JSON response (GeoJSON coordinates: [longitude, latitude])
         std::ostringstream oss;
         oss.precision(7);
         oss << std::fixed;
 
         oss << "{\n";
         oss << "  \"success\": true,\n";
-        oss << "  \"distance_m\": " << best_distance_m << ",\n";
-        oss << "  \"distance_km\": " << (best_distance_m / 1000.0) << ",\n";
-        oss << "  \"estimated_duration_s\": " << static_cast<int>(std::round(best_distance_m / 6.944)) << ",\n";
-        oss << "  \"computation_time_ms\": " << route_time_ms << ",\n";
-        oss << "  \"nodes_visited\": " << best_nodes_visited << ",\n";
+        oss << "  \"distance_m\": " << route_res.distance_m << ",\n";
+        oss << "  \"distance_km\": " << (route_res.distance_m / 1000.0) << ",\n";
+        oss << "  \"estimated_duration_s\": " << static_cast<int>(std::round(route_res.duration_s)) << ",\n";
+        oss << "  \"computation_time_ms\": " << route_res.computation_time_ms << ",\n";
+        oss << "  \"nodes_visited\": " << route_res.nodes_visited << ",\n";
 
         // Snapping details
         oss << "  \"origin\": {\n";
         oss << "    \"query\": {\"lat\": " << from_lat << ", \"lon\": " << from_lon << "},\n";
-        oss << "    \"snapped\": {\"node_id\": \"" << snap_orig_node_id << "\", \"lat\": " << snap_orig_lat
-            << ", \"lon\": " << snap_orig_lon << ", \"snap_distance_m\": " << snap_orig_dist << "}\n";
+        oss << "    \"snapped\": {\"node_id\": \"" << route_res.snap_orig_node_id << "\", \"lat\": " << route_res.snap_orig_lat
+            << ", \"lon\": " << route_res.snap_orig_lon << ", \"snap_distance_m\": " << route_res.snap_orig_dist_m << "}\n";
         oss << "  },\n";
 
         oss << "  \"destination\": {\n";
         oss << "    \"query\": {\"lat\": " << to_lat << ", \"lon\": " << to_lon << "},\n";
-        oss << "    \"snapped\": {\"node_id\": \"" << snap_dest_node_id << "\", \"lat\": " << snap_dest_lat
-            << ", \"lon\": " << snap_dest_lon << ", \"snap_distance_m\": " << snap_dest_dist << "}\n";
+        oss << "    \"snapped\": {\"node_id\": \"" << route_res.snap_dest_node_id << "\", \"lat\": " << route_res.snap_dest_lat
+            << ", \"lon\": " << route_res.snap_dest_lon << ", \"snap_distance_m\": " << route_res.snap_dest_dist_m << "}\n";
         oss << "  },\n";
 
         // Sequence of node IDs as strings (preserving 64-bit precision in JS)
         oss << "  \"path_nodes\": [";
-        for (size_t i = 0; i < best_path_nodes.size(); ++i) {
+        for (size_t i = 0; i < route_res.path_nodes.size(); ++i) {
             if (i > 0) oss << ", ";
-            oss << "\"" << best_path_nodes[i] << "\"";
+            oss << "\"" << route_res.path_nodes[i] << "\"";
         }
         oss << "],\n";
 
         // GeoJSON geometry: array of [lon, lat] pairs along real road network graph
         oss << "  \"geometry\": [\n";
-        for (size_t i = 0; i < best_path_geometry.size(); ++i) {
-            double p_lat = best_path_geometry[i].first;
-            double p_lon = best_path_geometry[i].second;
+        for (size_t i = 0; i < route_res.path_geometry.size(); ++i) {
+            double p_lat = route_res.path_geometry[i].first;
+            double p_lon = route_res.path_geometry[i].second;
             oss << "    [" << p_lon << ", " << p_lat << "]";
-            if (i + 1 < best_path_geometry.size()) {
+            if (i + 1 < route_res.path_geometry.size()) {
                 oss << ",\n";
             }
         }
@@ -743,22 +597,46 @@ int main(int argc, char* argv[]) {
             return;
         }
 
-        int distance_m = static_cast<int>(root.has_key("distanceMeters") ? root["distanceMeters"].as_int64(0) : root["distance_meters"].as_int64(0));
-        int fare = static_cast<int>(root.has_key("fareAmount") ? root["fareAmount"].as_int64(0) : root["fare_amount"].as_int64(0));
-
-        if (distance_m <= 0 || fare <= 0) {
-            res.set_json("{\"success\":false,\"code\":\"INVALID_DISTANCE_OR_FARE\",\"error\":\"Khoảng cách và giá cước chuyến đi phải lớn hơn 0.\"}", 400);
-            return;
-        }
-
-        // Distance physical feasibility validation (lower bound against Haversine great-circle distance)
         double haversine_m = goride::dsa::SpatialGrid::haversine_distance_m(p_lat, p_lon, d_lat, d_lon);
-        if (haversine_m > 50.0 && distance_m < static_cast<int>(haversine_m * 0.7)) {
+        int client_distance_m = static_cast<int>(root.has_key("distanceMeters") ? root["distanceMeters"].as_int64(0) : root["distance_meters"].as_int64(0));
+        if (haversine_m > 50.0 && client_distance_m > 0 && client_distance_m < static_cast<int>(haversine_m * 0.7)) {
             res.set_json("{\"success\":false,\"code\":\"INVALID_DISTANCE\",\"error\":\"Khoảng cách lộ trình không thể nhỏ hơn khoảng cách đường chim bay thực tế.\"}", 400);
             return;
         }
 
-        // Server-authoritative fare calculation and validation
+        // 1. Server-authoritative route distance calculation via RoadGraph & Dijkstra
+        int distance_m = 0;
+        if (graph.node_count() > 0) {
+            auto route_res = goride::dsa::compute_shortest_route(graph, grid, p_lat, p_lon, d_lat, d_lon, 1000.0);
+            if (!route_res.success) {
+                int status_code = 400;
+                if (route_res.status == goride::dsa::RouteComputeStatus::ORIGIN_SNAP_FAILED ||
+                    route_res.status == goride::dsa::RouteComputeStatus::DESTINATION_SNAP_FAILED) {
+                    status_code = 422;
+                } else if (route_res.status == goride::dsa::RouteComputeStatus::ROUTE_NOT_FOUND) {
+                    status_code = 404;
+                }
+                std::ostringstream err_resp;
+                err_resp << "{\"success\":false,\"code\":\"" << route_res.code
+                         << "\",\"error\":\"" << route_res.error << "\"}";
+                res.set_json(err_resp.str(), status_code);
+                return;
+            }
+            distance_m = static_cast<int>(std::round(route_res.distance_m));
+            if (distance_m <= 0) {
+                distance_m = 10;
+            }
+        } else {
+            // Fallback if OSM road graph dataset is not loaded in current environment
+            distance_m = client_distance_m;
+            if (distance_m <= 0) {
+                distance_m = static_cast<int>(std::round(haversine_m * 1.25));
+            }
+        }
+
+        int fare = static_cast<int>(root.has_key("fareAmount") ? root["fareAmount"].as_int64(0) : root["fare_amount"].as_int64(0));
+
+        // Note: Demo fare estimation formula. Official pricing policy is currently BLOCKED pending product specification.
         double dist_km = distance_m / 1000.0;
         int expected_fare = 0;
         if (vehicle_type == "motorbike") {
@@ -773,12 +651,16 @@ int main(int argc, char* argv[]) {
         // Round to nearest 1,000 VND
         expected_fare = ((expected_fare + 500) / 1000) * 1000;
 
-        // Check for fare tampering (allow max 35% discount or 50% surge from catalog expected fare)
-        double min_allowed = expected_fare * 0.65;
-        double max_allowed = expected_fare * 1.50;
-        if (fare < min_allowed || fare > max_allowed) {
-            res.set_json("{\"success\":false,\"code\":\"INVALID_FARE\",\"error\":\"Giá cước không hợp lệ hoặc có dấu hiệu can thiệp giá.\"}", 400);
-            return;
+        if (fare <= 0) {
+            fare = expected_fare;
+        } else {
+            // Guard against extreme client tampering (>50% discount or >100% surge from catalog expected fare)
+            double min_allowed = expected_fare * 0.50;
+            double max_allowed = expected_fare * 2.00;
+            if (fare < min_allowed || fare > max_allowed) {
+                res.set_json("{\"success\":false,\"code\":\"INVALID_FARE\",\"error\":\"Giá cước không hợp lệ hoặc có dấu hiệu can thiệp giá.\"}", 400);
+                return;
+            }
         }
 
         std::string p_name = root.has_key("pickupName") ? root["pickupName"].as_string() : root["pickup_name"].as_string();

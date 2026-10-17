@@ -11,6 +11,9 @@
 
 #include "auth/auth_service.hpp"
 #include "db/database.hpp"
+#include "dsa/dijkstra.hpp"
+#include "dsa/road_graph.hpp"
+#include "dsa/route_service.hpp"
 #include "dsa/spatial_grid.hpp"
 #include "server/http_server.hpp"
 #include "trip/trip_service.hpp"
@@ -18,6 +21,7 @@
 
 using namespace goride::auth;
 using namespace goride::db;
+using namespace goride::dsa;
 using namespace goride::server;
 using namespace goride::trip;
 using namespace goride::utils;
@@ -43,7 +47,8 @@ void record_test(const std::string& name, bool condition, const std::string& det
 }
 
 // Helper to configure all Gate C.3 REST API routes on an in-memory test HttpServer instance
-void register_c3_api_routes(HttpServer& server, AuthService& auth_service, TripService& trip_service) {
+void register_c3_api_routes(HttpServer& server, AuthService& auth_service, TripService& trip_service,
+                            const RoadGraph* graph = nullptr, const SpatialGrid* grid = nullptr) {
     // RBAC Authenticate Helper Lambda
     auto authenticate_user = [&](const HttpRequest& req, HttpResponse& res,
                                  const std::vector<std::string>& allowed_roles = {}) -> std::optional<User> {
@@ -131,22 +136,46 @@ void register_c3_api_routes(HttpServer& server, AuthService& auth_service, TripS
             return;
         }
 
-        int distance_m = static_cast<int>(root.has_key("distanceMeters") ? root["distanceMeters"].as_int64(0) : root["distance_meters"].as_int64(0));
-        int fare = static_cast<int>(root.has_key("fareAmount") ? root["fareAmount"].as_int64(0) : root["fare_amount"].as_int64(0));
-
-        if (distance_m <= 0 || fare <= 0) {
-            res.set_json("{\"success\":false,\"code\":\"INVALID_DISTANCE_OR_FARE\",\"error\":\"Khoảng cách và giá cước chuyến đi phải lớn hơn 0.\"}", 400);
-            return;
-        }
-
-        // Distance physical feasibility validation (lower bound against Haversine great-circle distance)
         double haversine_m = goride::dsa::SpatialGrid::haversine_distance_m(p_lat, p_lon, d_lat, d_lon);
-        if (haversine_m > 50.0 && distance_m < static_cast<int>(haversine_m * 0.7)) {
+        int client_distance_m = static_cast<int>(root.has_key("distanceMeters") ? root["distanceMeters"].as_int64(0) : root["distance_meters"].as_int64(0));
+        if (haversine_m > 50.0 && client_distance_m > 0 && client_distance_m < static_cast<int>(haversine_m * 0.7)) {
             res.set_json("{\"success\":false,\"code\":\"INVALID_DISTANCE\",\"error\":\"Khoảng cách lộ trình không thể nhỏ hơn khoảng cách đường chim bay thực tế.\"}", 400);
             return;
         }
 
-        // Server-authoritative fare calculation and validation
+        // 1. Server-authoritative route distance calculation via RoadGraph & Dijkstra
+        int distance_m = 0;
+        if (graph && grid && graph->node_count() > 0) {
+            auto route_res = goride::dsa::compute_shortest_route(*graph, *grid, p_lat, p_lon, d_lat, d_lon, 1000.0);
+            if (!route_res.success) {
+                int status_code = 400;
+                if (route_res.status == goride::dsa::RouteComputeStatus::ORIGIN_SNAP_FAILED ||
+                    route_res.status == goride::dsa::RouteComputeStatus::DESTINATION_SNAP_FAILED) {
+                    status_code = 422;
+                } else if (route_res.status == goride::dsa::RouteComputeStatus::ROUTE_NOT_FOUND) {
+                    status_code = 404;
+                }
+                std::ostringstream err_resp;
+                err_resp << "{\"success\":false,\"code\":\"" << route_res.code
+                         << "\",\"error\":\"" << route_res.error << "\"}";
+                res.set_json(err_resp.str(), status_code);
+                return;
+            }
+            distance_m = static_cast<int>(std::round(route_res.distance_m));
+            if (distance_m <= 0) {
+                distance_m = 10;
+            }
+        } else {
+            // Fallback if OSM road graph dataset is not loaded in current environment
+            distance_m = client_distance_m;
+            if (distance_m <= 0) {
+                distance_m = static_cast<int>(std::round(haversine_m * 1.25));
+            }
+        }
+
+        int fare = static_cast<int>(root.has_key("fareAmount") ? root["fareAmount"].as_int64(0) : root["fare_amount"].as_int64(0));
+
+        // Note: Demo fare estimation formula. Official pricing policy is currently BLOCKED pending product specification.
         double dist_km = distance_m / 1000.0;
         int expected_fare = 0;
         if (vehicle_type == "motorbike") {
@@ -161,12 +190,16 @@ void register_c3_api_routes(HttpServer& server, AuthService& auth_service, TripS
         // Round to nearest 1,000 VND
         expected_fare = ((expected_fare + 500) / 1000) * 1000;
 
-        // Check for fare tampering (allow max 35% discount or 50% surge from catalog expected fare)
-        double min_allowed = expected_fare * 0.65;
-        double max_allowed = expected_fare * 1.50;
-        if (fare < min_allowed || fare > max_allowed) {
-            res.set_json("{\"success\":false,\"code\":\"INVALID_FARE\",\"error\":\"Giá cước không hợp lệ hoặc có dấu hiệu can thiệp giá.\"}", 400);
-            return;
+        if (fare <= 0) {
+            fare = expected_fare;
+        } else {
+            // Guard against extreme client tampering (>50% discount or >100% surge from catalog expected fare)
+            double min_allowed = expected_fare * 0.50;
+            double max_allowed = expected_fare * 2.00;
+            if (fare < min_allowed || fare > max_allowed) {
+                res.set_json("{\"success\":false,\"code\":\"INVALID_FARE\",\"error\":\"Giá cước không hợp lệ hoặc có dấu hiệu can thiệp giá.\"}", 400);
+                return;
+            }
         }
 
         std::string p_name = root.has_key("pickupName") ? root["pickupName"].as_string() : root["pickup_name"].as_string();
@@ -591,8 +624,29 @@ int main() {
     auth.database().initialize_schema("database/schema.sql");
 
     TripService trip_service(auth.database());
+
+    // Build synthetic road graph & spatial grid for routing and distance verification
+    RoadGraph synthetic_graph;
+    synthetic_graph.add_node(1, 10.7716, 106.7044); // Bitexco
+    synthetic_graph.add_node(2, 10.7800, 106.7100); // Intermediate node
+    synthetic_graph.add_node(3, 10.7951, 106.7218); // Landmark 81
+    synthetic_graph.add_node(4, 10.7700, 106.6900); // Concurrency pickup
+    synthetic_graph.add_node(5, 10.7750, 106.6950); // Concurrency dropoff
+    synthetic_graph.add_node(6, 10.7700, 106.6900); // General pickup
+    synthetic_graph.add_node(7, 10.7800, 106.7000); // General dropoff
+    synthetic_graph.add_node(999, 10.8500, 106.8000); // Isolated island node (no edges)
+
+    synthetic_graph.add_edge(1, 2, 2000.0, 1001, "Ton Duc Thang");
+    synthetic_graph.add_edge(2, 3, 2350.0, 1002, "Nguyen Huu Canh");
+    synthetic_graph.add_edge(1, 3, 4350.0, 1003, "Direct Arterial");
+    synthetic_graph.add_edge(4, 5, 800.0, 1004, "Le Loi");
+    synthetic_graph.add_edge(6, 7, 2000.0, 1005, "District 1 Link");
+
+    SpatialGrid test_grid(0.005);
+    test_grid.build_index(synthetic_graph);
+
     HttpServer server;
-    register_c3_api_routes(server, auth, trip_service);
+    register_c3_api_routes(server, auth, trip_service, &synthetic_graph, &test_grid);
 
     // Register test accounts and obtain valid tokens
     auto cust_reg = auth.register_user("Nguyễn Khách C3", "cust.c3@goride.vn", "0901234567", "pass123456", "customer");
@@ -1093,6 +1147,93 @@ int main() {
         bool get_ok = trip_service.get_trip(conc_trip_id, trip_check);
         record_test("Database Invariant: Final trip status is strictly ARRIVED after conflicting transitions",
                     get_ok && trip_check.status == TripStatus::ARRIVED && trip_check.driver_id == drv1_id);
+    }
+
+    // -------------------------------------------------------------
+    // SUITE 9: Server-Authoritative Route Distance & Graph Snapping
+    // -------------------------------------------------------------
+    std::cout << "\n--- SUITE 9: Server-Authoritative Route Distance & Graph Snapping ---" << std::endl;
+    {
+        // 1. Register a dedicated customer for Suite 9
+        auto cust9_reg = auth.register_user("Lê Khách C3 Route", "cust9.c3@goride.vn", "0908888888", "pass123456", "customer");
+        assert(cust9_reg.success);
+        auto cust9_login = auth.login("cust9.c3@goride.vn", "pass123456");
+        assert(cust9_login.success);
+        std::string cust9_token = cust9_login.token;
+
+        // 2. Server calculates exact distance (4350m) and overrides spoofed distance (client sent 99999m)
+        std::string spoofed_body = R"({
+            "vehicle_type": "car4",
+            "pickup_name": "Bitexco Financial Tower",
+            "pickup_lat": 10.7716,
+            "pickup_lon": 106.7044,
+            "dropoff_name": "Landmark 81",
+            "dropoff_lat": 10.7951,
+            "dropoff_lon": 106.7218,
+            "distance_meters": 99999,
+            "fare_amount": 76000,
+            "payment_method": "cash"
+        })";
+        auto r_dist = call_api("POST", "/api/trips/request", cust9_token, spoofed_body);
+        bool created_ok = (r_dist.status_code == 201);
+
+        std::string route_trip_id;
+        std::string err_parse_s9;
+        auto root_r = JsonValue::parse(r_dist.body, err_parse_s9);
+        if (root_r.is_object() && root_r.has_key("trip") && root_r["trip"].has_key("id")) {
+            route_trip_id = root_r["trip"]["id"].as_string();
+        }
+
+        Trip saved_trip;
+        bool fetch_ok = trip_service.get_trip(route_trip_id, saved_trip);
+        record_test("Server-authoritative distance overrides client-spoofed distance (DB distance is 4350m)",
+                    created_ok && fetch_ok && saved_trip.distance_meters == 4350,
+                    "Expected: 4350m, Actual in DB: " + std::to_string(saved_trip.distance_meters) + "m");
+
+        // Cancel trip to free customer for subsequent tests
+        call_api("POST", "/api/trips/cancel", cust9_token, R"({"trip_id":")" + route_trip_id + R"("})");
+
+        // 3. Origin snap failed (> 1000m from any road edge, e.g. out at sea / 10.0, 105.0)
+        std::string out_body = R"({
+            "vehicle_type": "car4",
+            "pickup_lat": 10.0000,
+            "pickup_lon": 105.0000,
+            "dropoff_lat": 10.7951,
+            "dropoff_lon": 106.7218,
+            "distance_meters": 5000,
+            "fare_amount": 76000
+        })";
+        auto r_snap_orig = call_api("POST", "/api/trips/request", cust9_token, out_body);
+        record_test("Origin coordinate > 1000m from road network returns HTTP 422 ORIGIN_SNAP_FAILED",
+                    r_snap_orig.status_code == 422 && r_snap_orig.body.find("ORIGIN_SNAP_FAILED") != std::string::npos);
+
+        // 4. Destination snap failed (> 1000m from road)
+        std::string dest_out_body = R"({
+            "vehicle_type": "car4",
+            "pickup_lat": 10.7716,
+            "pickup_lon": 106.7044,
+            "dropoff_lat": 10.0000,
+            "dropoff_lon": 105.0000,
+            "distance_meters": 5000,
+            "fare_amount": 76000
+        })";
+        auto r_snap_dest = call_api("POST", "/api/trips/request", cust9_token, dest_out_body);
+        record_test("Destination coordinate > 1000m from road network returns HTTP 422 DESTINATION_SNAP_FAILED",
+                    r_snap_dest.status_code == 422 && r_snap_dest.body.find("DESTINATION_SNAP_FAILED") != std::string::npos);
+
+        // 5. Disconnected road network component (Node 999 has no edges) returns HTTP 404 ROUTE_NOT_FOUND
+        std::string disconn_body = R"({
+            "vehicle_type": "car4",
+            "pickup_lat": 10.7716,
+            "pickup_lon": 106.7044,
+            "dropoff_lat": 10.8500,
+            "dropoff_lon": 106.8000,
+            "distance_meters": 5000,
+            "fare_amount": 76000
+        })";
+        auto r_disconn = call_api("POST", "/api/trips/request", cust9_token, disconn_body);
+        record_test("Unroutable disconnected destinations return HTTP 404 ROUTE_NOT_FOUND",
+                    r_disconn.status_code == 404 && r_disconn.body.find("ROUTE_NOT_FOUND") != std::string::npos);
     }
 
     // Clean up isolated test database files
