@@ -1,0 +1,186 @@
+{
+  "status": "VERIFIED_GENUINE_RECOVERED_DATA",
+  "phase": "Phase 2A.1 Recovery",
+  "dataset_name": "HCMC Central Motorable Road Network",
+  "source": "OpenStreetMap (Overpass API)",
+  "license": "ODbL 1.0",
+  "attribution": "© OpenStreetMap contributors",
+  "actual_vertex_bounds": {
+    "south_lat": 10.756148,
+    "west_lon": 106.6413187,
+    "north_lat": 10.8316329,
+    "east_lon": 106.7426296
+  },
+  "metrics": {
+    "osm_nodes_count": 16305,
+    "osm_ways_count": 3374,
+    "total_segments_count": 17412,
+    "oneway_segments_count": 11679,
+    "twoway_segments_count": 5733,
+    "directed_graph_edges_count": 23145,
+    "missing_node_references": 0,
+    "wcc_components_count": 13,
+    "giant_component_size": 16044,
+    "giant_component_coverage_pct": "98.4%",
+    "directed_reachability_score": "20/20"
+  },
+  "landmark_verification": {
+    "ben_thanh": {
+      "name": "Chợ Bến Thành",
+      "lat": 10.7725,
+      "lon": 106.698,
+      "nearest_node_id": 6789338779,
+      "distance_to_road_m": 82.32
+    },
+    "notre_dame": {
+      "name": "Nhà thờ Đức Bà",
+      "lat": 10.7798,
+      "lon": 106.699,
+      "nearest_node_id": 411918767,
+      "distance_to_road_m": 28.25
+    },
+    "landmark_81": {
+      "name": "Landmark 81",
+      "lat": 10.7951,
+      "lon": 106.7219,
+      "nearest_node_id": 1497312775,
+      "distance_to_road_m": 262.26
+    },
+    "tan_son_nhat": {
+      "name": "Sân bay Tân Sơn Nhất",
+      "lat": 10.8185,
+      "lon": 106.6588,
+      "nearest_node_id": 13063677463,
+      "distance_to_road_m": 587.4
+    },
+    "bach_khoa": {
+      "name": "Đại học Bách Khoa TP.HCM",
+      "lat": 10.7721,
+      "lon": 106.6578,
+      "nearest_node_id": 12817685128,
+      "distance_to_road_m": 8.06
+    }
+  },
+  "directed_reachability_matrix": {
+    "ben_thanh_to_notre_dame": {
+      "reachable": true,
+      "hops": 63,
+      "distance_m": 1969.58,
+      "description": "PATH FOUND: Chợ Bến Thành -> Nhà thờ Đức Bà (63 segments, 1.97 km)"
+    },
+    "ben_thanh_to_landmark_81": {
+      "reachable": true,
+      "hops": 160,
+      "distance_m": 5700.03,
+      "description": "PATH FOUND: Chợ Bến Thành -> Landmark 81 (160 segments, 5.70 km)"
+    },
+    "ben_thanh_to_tan_son_nhat": {
+      "reachable": true,
+      "hops": 191,
+      "distance_m": 7696.23,
+      "description": "PATH FOUND: Chợ Bến Thành -> Sân bay Tân Sơn Nhất (191 segments, 7.70 km)"
+    },
+    "ben_thanh_to_bach_khoa": {
+      "reachable": true,
+      "hops": 188,
+      "distance_m": 6602.82,
+      "description": "PATH FOUND: Chợ Bến Thành -> Đại học Bách Khoa TP.HCM (188 segments, 6.60 km)"
+    },
+    "notre_dame_to_ben_thanh": {
+      "reachable": true,
+      "hops": 37,
+      "distance_m": 1015.99,
+      "description": "PATH FOUND: Nhà thờ Đức Bà -> Chợ Bến Thành (37 segments, 1.02 km)"
+    },
+    "notre_dame_to_landmark_81": {
+      "reachable": true,
+      "hops": 136,
+      "distance_m": 4592.01,
+      "description": "PATH FOUND: Nhà thờ Đức Bà -> Landmark 81 (136 segments, 4.59 km)"
+    },
+    "notre_dame_to_tan_son_nhat": {
+      "reachable": true,
+      "hops": 180,
+      "distance_m": 7150.77,
+      "description": "PATH FOUND: Nhà thờ Đức Bà -> Sân bay Tân Sơn Nhất (180 segments, 7.15 km)"
+    },
+    "notre_dame_to_bach_khoa": {
+      "reachable": true,
+      "hops": 187,
+      "distance_m": 7025.66,
+      "description": "PATH FOUND: Nhà thờ Đức Bà -> Đại học Bách Khoa TP.HCM (187 segments, 7.03 km)"
+    },
+    "landmark_81_to_ben_thanh": {
+      "reachable": true,
+      "hops": 195,
+      "distance_m": 5781.96,
+      "description": "PATH FOUND: Landmark 81 -> Chợ Bến Thành (195 segments, 5.78 km)"
+    },
+    "landmark_81_to_notre_dame": {
+      "reachable": true,
+      "hops": 179,
+      "distance_m": 5570.91,
+      "description": "PATH FOUND: Landmark 81 -> Nhà thờ Đức Bà (179 segments, 5.57 km)"
+    },
+    "landmark_81_to_tan_son_nhat": {
+      "reachable": true,
+      "hops": 294,
+      "distance_m": 10685.68,
+      "description": "PATH FOUND: Landmark 81 -> Sân bay Tân Sơn Nhất (294 segments, 10.69 km)"
+    },
+    "landmark_81_to_bach_khoa": {
+      "reachable": true,
+      "hops": 313,
+      "distance_m": 11105.4,
+      "description": "PATH FOUND: Landmark 81 -> Đại học Bách Khoa TP.HCM (313 segments, 11.11 km)"
+    },
+    "tan_son_nhat_to_ben_thanh": {
+      "reachable": true,
+      "hops": 228,
+      "distance_m": 7313.46,
+      "description": "PATH FOUND: Sân bay Tân Sơn Nhất -> Chợ Bến Thành (228 segments, 7.31 km)"
+    },
+    "tan_son_nhat_to_notre_dame": {
+      "reachable": true,
+      "hops": 211,
+      "distance_m": 6865.73,
+      "description": "PATH FOUND: Sân bay Tân Sơn Nhất -> Nhà thờ Đức Bà (211 segments, 6.87 km)"
+    },
+    "tan_son_nhat_to_landmark_81": {
+      "reachable": true,
+      "hops": 248,
+      "distance_m": 9431.75,
+      "description": "PATH FOUND: Sân bay Tân Sơn Nhất -> Landmark 81 (248 segments, 9.43 km)"
+    },
+    "tan_son_nhat_to_bach_khoa": {
+      "reachable": true,
+      "hops": 239,
+      "distance_m": 6491.7,
+      "description": "PATH FOUND: Sân bay Tân Sơn Nhất -> Đại học Bách Khoa TP.HCM (239 segments, 6.49 km)"
+    },
+    "bach_khoa_to_ben_thanh": {
+      "reachable": true,
+      "hops": 225,
+      "distance_m": 7718.53,
+      "description": "PATH FOUND: Đại học Bách Khoa TP.HCM -> Chợ Bến Thành (225 segments, 7.72 km)"
+    },
+    "bach_khoa_to_notre_dame": {
+      "reachable": true,
+      "hops": 208,
+      "distance_m": 7270.8,
+      "description": "PATH FOUND: Đại học Bách Khoa TP.HCM -> Nhà thờ Đức Bà (208 segments, 7.27 km)"
+    },
+    "bach_khoa_to_landmark_81": {
+      "reachable": true,
+      "hops": 290,
+      "distance_m": 10389.64,
+      "description": "PATH FOUND: Đại học Bách Khoa TP.HCM -> Landmark 81 (290 segments, 10.39 km)"
+    },
+    "bach_khoa_to_tan_son_nhat": {
+      "reachable": true,
+      "hops": 203,
+      "distance_m": 6812.26,
+      "description": "PATH FOUND: Đại học Bách Khoa TP.HCM -> Sân bay Tân Sơn Nhất (203 segments, 6.81 km)"
+    }
+  }
+}

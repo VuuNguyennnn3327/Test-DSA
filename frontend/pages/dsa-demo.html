@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng giải thuật DSA | GoRide — Đặt xe dễ dàng, đi mọi hành trình.</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <div class="app">
+        <header class="app-header">
+            <div class="header-logo" style="display:flex; align-items:center; gap:var(--space-2);">
+                <a href="../index.html" class="btn btn-ghost btn-sm">🏠 Trang chủ</a>
+                <a href="admin.html" class="btn btn-ghost btn-sm">← Quản trị</a>
+                <span class="header-brand" style="color:var(--color-primary); font-weight:800;">GoRide</span>
+                <span class="badge badge-info">SHELL ONLY</span>
+            </div>
+            <div class="user-menu desktop-only">
+                <span style="font-size:0.875rem; color:var(--color-text-muted);">Phòng thí nghiệm thuật toán không gian (DSA)</span>
+            </div>
+        </header>
+
+        <main class="app-main" style="padding:var(--space-4);">
+            <!-- Demo Tabs -->
+            <div class="demo-tabs" style="display:flex; gap:0; margin-bottom:var(--space-4); border:1px solid var(--color-gray-300); border-radius:var(--radius-md); overflow:hidden;">
+                <button class="btn btn-block demo-tab active" data-demo="rtree" style="border-radius:0; border:none; background:var(--color-primary); color:white;">R-Tree</button>
+                <button class="btn btn-block demo-tab" data-demo="range" style="border-radius:0; border:none; background:var(--color-gray-100); color:var(--color-gray-700);">Range Search</button>
+                <button class="btn btn-block demo-tab" data-demo="knn" style="border-radius:0; border:none; background:var(--color-gray-100); color:var(--color-gray-700);">k-NN</button>
+                <button class="btn btn-block demo-tab" data-demo="dijkstra" style="border-radius:0; border:none; background:var(--color-gray-100); color:var(--color-gray-700);">Dijkstra</button>
+            </div>
+
+            <!-- R-Tree Demo -->
+            <div id="demo-rtree" class="demo-section">
+                <div class="demo-panel">
+                    <div class="demo-controls">
+                        <h3>R-Tree Spatial Indexing</h3>
+                        <p style="color:var(--color-gray-600); font-size:0.875rem; margin-bottom:var(--space-4);">
+                            Khu vực minh họa phân cấp hình chữ nhật bao quanh tối thiểu (MBR - Minimum Bounding Rectangles). Sẽ kết nối thuật toán C++ ở giai đoạn tiếp theo.
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Thêm điểm tọa độ (Lat, Lng)</label>
+                            <div style="display:flex; gap:var(--space-2);">
+                                <input type="number" class="form-input" placeholder="Lat" step="0.0001" value="10.7769">
+                                <input type="number" class="form-input" placeholder="Lng" step="0.0001" value="106.7009">
+                                <button class="btn btn-primary" disabled title="Tính năng sẽ kích hoạt khi tích hợp C++ backend">Thêm</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Query Window (Bounding Box)</label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2);">
+                                <input type="number" class="form-input" placeholder="Min Lat (10.760)" step="0.001">
+                                <input type="number" class="form-input" placeholder="Min Lng (106.680)" step="0.001">
+                                <input type="number" class="form-input" placeholder="Max Lat (10.790)" step="0.001">
+                                <input type="number" class="form-input" placeholder="Max Lng (106.720)" step="0.001">
+                            </div>
+                            <button class="btn btn-outline btn-block" disabled style="margin-top:var(--space-2);">Tìm kiếm trong khung</button>
+                        </div>
+                        <div class="app-alert alert-info" style="margin-top:var(--space-4);">
+                            <span>Giai đoạn hiện tại là Shell UI. C++17 R-Tree Engine sẽ được tích hợp ở Phase DSA.</span>
+                        </div>
+                    </div>
+                    <div class="demo-canvas-area">
+                        <div id="rtree-map" style="width:100%; height:420px; border-radius:var(--radius-md); overflow:hidden; background:var(--color-gray-100); border:1px solid var(--color-gray-200);">
+                            <div class="empty-state" style="height:100%; display:flex; align-items:center; justify-content:center;">
+                                <div style="text-align:center;">
+                                    <div class="empty-state-icon" style="font-size:2.5rem; margin-bottom:var(--space-2);">🌳</div>
+                                    <p class="empty-state-title" style="font-weight:600;">R-Tree Canvas / Spatial Map</p>
+                                    <p class="empty-state-description" style="color:var(--color-gray-500); font-size:0.875rem;">Sẽ trực quan hóa các tầng MBR và vị trí các xe đang lưu thông.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Range Search Demo -->
+            <div id="demo-range" class="demo-section" style="display:none;">
+                <div class="demo-panel">
+                    <div class="demo-controls">
+                        <h3>Range Search (Bán kính tìm kiếm)</h3>
+                        <p style="color:var(--color-gray-600); font-size:0.875rem; margin-bottom:var(--space-4);">
+                            Tìm tất cả tài xế trong bán kính R (km). Cung cấp cơ chế so sánh hiệu năng trực quan giữa R-Tree Range Search và Quét tuần tự (Naive Scan).
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Tọa độ tâm (Lat, Lng)</label>
+                            <div style="display:flex; gap:var(--space-2);">
+                                <input type="number" class="form-input" placeholder="Lat" step="0.0001" value="10.7769">
+                                <input type="number" class="form-input" placeholder="Lng" step="0.0001" value="106.7009">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bán kính quét (km)</label>
+                            <input type="number" class="form-input" placeholder="2.0" step="0.1" value="2.5">
+                        </div>
+                        <button class="btn btn-primary btn-block" disabled>Thực thi so sánh Benchmark</button>
+                        <div class="demo-results" style="margin-top:var(--space-4);">
+                            <div class="demo-result-card" style="display:flex; justify-content:space-between; padding:var(--space-3); border:1px solid var(--color-gray-200); border-radius:var(--radius-md); margin-bottom:var(--space-2);">
+                                <span class="demo-result-label"><strong>R-Tree Range Query</strong></span>
+                                <span class="demo-result-value badge badge-success">Sẵn sàng (Phase DSA)</span>
+                            </div>
+                            <div class="demo-result-card" style="display:flex; justify-content:space-between; padding:var(--space-3); border:1px solid var(--color-gray-200); border-radius:var(--radius-md);">
+                                <span class="demo-result-label"><strong>Naive Linear Scan</strong></span>
+                                <span class="demo-result-value badge badge-warning">Sẵn sàng (Phase DSA)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="demo-canvas-area">
+                        <div style="width:100%; height:420px; border-radius:var(--radius-md); background:var(--color-gray-100); border:1px solid var(--color-gray-200); display:flex; align-items:center; justify-content:center;">
+                            <div style="text-align:center;">
+                                <div class="empty-state-icon" style="font-size:2.5rem; margin-bottom:var(--space-2);">🔍</div>
+                                <p class="empty-state-title" style="font-weight:600;">Range Search Visualization</p>
+                                <p class="empty-state-description" style="color:var(--color-gray-500); font-size:0.875rem;">Sẽ vẽ đường tròn giới hạn và highlight các tài xế thỏa mãn điều kiện.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- k-NN Demo -->
+            <div id="demo-knn" class="demo-section" style="display:none;">
+                <div class="demo-panel">
+                    <div class="demo-controls">
+                        <h3>k-Nearest Neighbors (k-NN)</h3>
+                        <p style="color:var(--color-gray-600); font-size:0.875rem; margin-bottom:var(--space-4);">
+                            Tìm k tài xế gần điểm đón của khách hàng nhất bằng thuật toán Best-First Search (Priority Queue) trên cây R-Tree.
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Điểm khách hàng (Lat, Lng)</label>
+                            <div style="display:flex; gap:var(--space-2);">
+                                <input type="number" class="form-input" placeholder="Lat" step="0.0001" value="10.7769">
+                                <input type="number" class="form-input" placeholder="Lng" step="0.0001" value="106.7009">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Số lượng láng giềng k</label>
+                            <input type="number" class="form-input" placeholder="5" min="1" max="50" value="5">
+                        </div>
+                        <button class="btn btn-primary btn-block" disabled>Tìm k tài xế gần nhất</button>
+                        <div class="demo-results" style="margin-top:var(--space-4);">
+                            <p style="color:var(--color-gray-500); font-size:0.875rem; text-align:center;">Bảng xếp hạng k tài xế sẽ hiển thị khi kết nối backend C++</p>
+                        </div>
+                    </div>
+                    <div class="demo-canvas-area">
+                        <div style="width:100%; height:420px; border-radius:var(--radius-md); background:var(--color-gray-100); border:1px solid var(--color-gray-200); display:flex; align-items:center; justify-content:center;">
+                            <div style="text-align:center;">
+                                <div class="empty-state-icon" style="font-size:2.5rem; margin-bottom:var(--space-2);">📍</div>
+                                <p class="empty-state-title" style="font-weight:600;">k-NN Spatial Visualizer</p>
+                                <p class="empty-state-description" style="color:var(--color-gray-500); font-size:0.875rem;">Hiển thị thứ tự khoảng cách Euclidean / Haversine từ điểm đón đến từng tài xế.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dijkstra Demo -->
+            <div id="demo-dijkstra" class="demo-section" style="display:none;">
+                <div class="demo-panel">
+                    <div class="demo-controls">
+                        <h3>Dijkstra Shortest Path</h3>
+                        <p style="color:var(--color-gray-600); font-size:0.875rem; margin-bottom:var(--space-4);">
+                            Tìm lộ trình ngắn nhất trên đồ thị mạng lưới đường giao thông (Road Network Graph).
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Điểm bắt đầu (Start Node)</label>
+                            <input type="text" class="form-input" placeholder="Node ID hoặc click trên bản đồ" disabled value="Node #1042 (Chợ Bến Thành)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Điểm đích (End Node)</label>
+                            <input type="text" class="form-input" placeholder="Node ID hoặc click trên bản đồ" disabled value="Node #3188 (Đại học Bách Khoa)">
+                        </div>
+                        <button class="btn btn-primary btn-block" disabled>Tìm đường tối ưu</button>
+                        <div class="demo-results" style="margin-top:var(--space-4);">
+                            <div class="demo-result-card" style="display:flex; justify-content:space-between; padding:var(--space-3); border:1px solid var(--color-gray-200); border-radius:var(--radius-md); margin-bottom:var(--space-2);">
+                                <span class="demo-result-label">Khoảng cách đồ thị</span>
+                                <span class="demo-result-value">-- km</span>
+                            </div>
+                            <div class="demo-result-card" style="display:flex; justify-content:space-between; padding:var(--space-3); border:1px solid var(--color-gray-200); border-radius:var(--radius-md); margin-bottom:var(--space-2);">
+                                <span class="demo-result-label">Số đỉnh đã duyệt</span>
+                                <span class="demo-result-value">-- đỉnh</span>
+                            </div>
+                            <div class="demo-result-card" style="display:flex; justify-content:space-between; padding:var(--space-3); border:1px solid var(--color-gray-200); border-radius:var(--radius-md);">
+                                <span class="demo-result-label">Thời gian tính toán</span>
+                                <span class="demo-result-value">-- ms</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="demo-canvas-area">
+                        <div style="width:100%; height:420px; border-radius:var(--radius-md); background:var(--color-gray-100); border:1px solid var(--color-gray-200); display:flex; align-items:center; justify-content:center;">
+                            <div style="text-align:center;">
+                                <div class="empty-state-icon" style="font-size:2.5rem; margin-bottom:var(--space-2);">🗺️</div>
+                                <p class="empty-state-title" style="font-weight:600;">Road Network & Route Path</p>
+                                <p class="empty-state-description" style="color:var(--color-gray-500); font-size:0.875rem;">Vẽ mạng lưới đồ thị và polyline đường đi ngắn nhất nối giữa các đỉnh.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:center; padding:var(--space-6); color:var(--color-gray-500); font-size:0.875rem;">
+                <p>Khung giao diện minh họa thuật toán. Tất cả thuật toán sẽ được xử lý thực tế bởi C++ backend qua REST API ở Phase tiếp theo.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script src="../js/map/map-controller.js"></script>
+    <script src="../js/map/map-renderer.js"></script>
+    <script>
+        // Tab switching
+        document.querySelectorAll('.demo-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.demo-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.style.background = 'var(--color-gray-100)';
+                    t.style.color = 'var(--color-gray-700)';
+                });
+                tab.classList.add('active');
+                tab.style.background = 'var(--color-primary)';
+                tab.style.color = 'white';
+
+                document.querySelectorAll('.demo-section').forEach(s => s.style.display = 'none');
+                const target = tab.getAttribute('data-demo');
+                const targetSection = document.getElementById('demo-' + target);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

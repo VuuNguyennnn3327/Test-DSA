@@ -1,0 +1,35 @@
+# Build
+build/
+cmake-build-*/
+*.o
+*.obj
+*.exe
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime
+data/runtime/*
+!data/runtime/.gitkeep
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log

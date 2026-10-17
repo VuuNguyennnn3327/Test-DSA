@@ -1,0 +1,858 @@
+/**
+ * RIDE-RTREE Responsive System
+ * Media queries, adaptive layouts, viewport optimizations, and touch targets
+ * Uses design tokens exclusively from design-system.css
+ * Version: 1.0.0
+ */
+
+/* ==========================================================================
+   1. VISIBILITY UTILITY CLASSES (BASE DEFAULTS)
+   ========================================================================== */
+
+/* By default on large screens, desktop elements are displayed */
+.mobile-only,
+.mobile-only-flex,
+.tablet-only,
+.tablet-only-flex {
+  display: none !important;
+}
+
+.desktop-only {
+  display: block !important;
+}
+
+.desktop-only-flex {
+  display: flex !important;
+}
+
+/* ==========================================================================
+   2. DESKTOP BREAKPOINT (min-width: 1025px)
+   ========================================================================== */
+
+@media (min-width: 1025px) {
+  /* Sidebar is permanent and visible */
+  .app-sidebar {
+    display: flex;
+    position: sticky;
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    transform: none;
+    box-shadow: none;
+    border-right: 1px solid var(--color-border-subtle);
+  }
+
+  /* Bottom navigation is strictly hidden on desktop */
+  .bottom-nav {
+    display: none !important;
+  }
+
+  /* Map Panel behaves as side panel */
+  .map-panel {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: var(--map-panel-width);
+    min-width: var(--map-panel-width);
+    max-width: var(--map-panel-width);
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .map-panel-handle,
+  .panel-handle {
+    display: none !important;
+  }
+
+  /* Stats grid defaults to 3 columns on smaller desktop */
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+
+  /* Ensure backdrop is hidden */
+  .sidebar-backdrop,
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  /* Visibility tokens */
+  .desktop-only {
+    display: block !important;
+  }
+
+  .desktop-only-flex {
+    display: flex !important;
+  }
+
+  .mobile-only,
+  .mobile-only-flex,
+  .tablet-only,
+  .tablet-only-flex {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   3. TABLET BREAKPOINT (min-width: 641px and max-width: 1024px)
+   ========================================================================== */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Visibility toggles */
+  .desktop-only,
+  .desktop-only-flex {
+    display: none !important;
+  }
+
+  .tablet-only {
+    display: block !important;
+  }
+
+  .tablet-only-flex {
+    display: flex !important;
+  }
+
+  .mobile-only,
+  .mobile-only-flex {
+    display: none !important;
+  }
+
+  /* Bottom nav hidden on tablet */
+  .bottom-nav {
+    display: none !important;
+  }
+
+  /* Sidebar transforms into an off-canvas overlay drawer */
+  .app-sidebar {
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: 80vw;
+    height: calc(100vh - var(--header-height));
+    z-index: var(--z-layout-sidebar);
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+    transition: transform var(--transition-normal);
+  }
+
+  .app-sidebar.open,
+  .app-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  /* Show toggle button in header */
+  .header-sidebar-toggle {
+    display: inline-flex;
+  }
+
+  /* Narrower map panel on tablet */
+  .map-panel {
+    width: var(--map-panel-width-tablet);
+    min-width: var(--map-panel-width-tablet);
+    max-width: var(--map-panel-width-tablet);
+  }
+
+  .map-panel-handle,
+  .panel-handle {
+    display: none !important;
+  }
+
+  /* Stats grid is 2 columns on tablet */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  /* Container padding for tablet */
+  .container {
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+  }
+
+  /* Data table wrapper remains responsive */
+  .data-table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ==========================================================================
+   4. MOBILE BREAKPOINT (max-width: 640px)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  /* Visibility controls */
+  .desktop-only,
+  .desktop-only-flex,
+  .tablet-only,
+  .tablet-only-flex {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  .mobile-only-flex {
+    display: flex !important;
+  }
+
+  /* --- App Shell & Layout Adjustments --- */
+  .app {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .app-body {
+    margin-top: var(--header-height);
+    min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+    min-height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  /* Main content area gets bottom clearance for bottom nav bar */
+  .app-main {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* --- Header Compact Mode --- */
+  .app-header {
+    padding: 0 var(--space-3);
+  }
+
+  .header-container {
+    gap: var(--space-2);
+  }
+
+  .header-nav {
+    display: none !important;
+  }
+
+  .header-user-info,
+  .header-user-name,
+  .header-user-role {
+    display: none !important;
+  }
+
+  .header-logo-text {
+    font-size: var(--font-size-base);
+  }
+
+  /* --- Sidebar Hide / Mobile Offcanvas Drawer --- */
+  .app-sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: var(--z-modal);
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+    transition: transform var(--transition-normal);
+  }
+
+  .app-sidebar.is-open,
+  .app-sidebar.open {
+    display: flex;
+    transform: translateX(0);
+  }
+
+  /* --- Bottom Nav Visible on Mobile --- */
+  .bottom-nav {
+    display: flex;
+  }
+
+  /* --- Map Panel Becomes Bottom Sheet --- */
+  .map-layout {
+    flex-direction: column;
+    height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+    height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  .map-container {
+    height: 100%;
+    width: 100%;
+  }
+
+  .map-panel {
+    position: fixed;
+    bottom: var(--bottom-nav-height);
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    max-height: 60vh;
+    height: auto;
+    background-color: var(--color-bg-surface);
+    border-left: none;
+    border-right: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-xl);
+    z-index: var(--z-layout-sheet);
+    transform: translateY(0);
+    transition:
+      transform var(--transition-normal),
+      max-height var(--transition-normal);
+    overflow: hidden;
+  }
+
+  /* Collapsed bottom sheet retains the draggable handle area */
+  .map-panel.is-collapsed,
+  .map-panel.collapsed {
+    transform: translateY(calc(100% - var(--bottom-sheet-handle-height) - var(--space-4)));
+  }
+
+  .map-panel.is-expanded {
+    max-height: 85vh;
+    max-height: 85dvh;
+  }
+
+  /* Draggable handle area is visible on mobile bottom sheets */
+  .map-panel-handle,
+  .panel-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) 0 var(--space-2);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .map-panel-handle-bar,
+  .panel-handle-bar {
+    display: block;
+    width: 2.5rem;
+    height: 0.25rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-gray-300);
+  }
+
+  .map-panel-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .map-panel-body {
+    padding: var(--space-4);
+    max-height: calc(60vh - 60px);
+    overflow-y: auto;
+  }
+
+  .map-panel-footer {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  /* Map controls floating position adjusts above bottom sheet */
+  .map-controls {
+    bottom: calc(var(--space-4) + var(--space-12));
+    right: var(--space-3);
+  }
+
+  .map-floating-search {
+    top: var(--space-3);
+    left: var(--space-3);
+    right: var(--space-3);
+    width: calc(100% - 2 * var(--space-3));
+    max-width: none;
+  }
+
+  /* --- Dashboard & Stats Grid (1 Column) --- */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .stat-card {
+    padding: var(--space-4);
+  }
+
+  .stat-card-value {
+    font-size: var(--font-size-xl);
+  }
+
+  /* --- Page Header Adjustments --- */
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+  }
+
+  .page-header-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-header-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  /* --- Container Spacing on Mobile --- */
+  .container,
+  .container-fluid,
+  .container-sm,
+  .container-lg {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  /* --- Auth Layout on Mobile --- */
+  .auth-layout {
+    padding: var(--space-6) var(--space-3);
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .auth-container {
+    max-width: 100%;
+    margin: auto 0;
+  }
+
+  .auth-card {
+    max-width: 100%;
+    padding: var(--space-6) var(--space-4);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-logo {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-xl);
+  }
+
+  /* --- Landing Page on Mobile --- */
+  .landing-brand-slogan {
+    display: none !important;
+  }
+
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .landing-auth-actions .btn-link-login {
+    display: none;
+  }
+
+  .landing-mobile-toggle {
+    display: inline-flex !important;
+  }
+
+  .hero-section {
+    padding: var(--space-8) var(--space-4) var(--space-6);
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .hero-title {
+    font-size: 1.85rem;
+  }
+
+  .hero-slogan {
+    font-size: var(--font-size-base);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .tech-banner {
+    grid-template-columns: 1fr;
+    padding: var(--space-6);
+  }
+
+  .landing-footer-inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  /* --- Data Table Scrollable Behavior --- */
+  .data-table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+
+  .data-table {
+    min-width: 520px;
+    font-size: var(--font-size-xs);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* --- Typography Adjustments for Mobile Readability --- */
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+  h4 { font-size: var(--font-size-base); }
+
+  /* --- Touch Targets: Minimum 44px on Mobile --- */
+  .btn {
+    min-height: 44px;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-input,
+  .form-select {
+    min-height: 44px;
+    /* 16px font-size prevents iOS browser automatic zoom on focus */
+    font-size: 1rem;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .nav-link {
+    min-height: 44px;
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+
+  .bottom-nav-link {
+    min-height: 44px;
+  }
+
+  .header-sidebar-toggle,
+  .sidebar-toggle,
+  .panel-close,
+  .map-control-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ==========================================================================
+   5. SPECIFIC VIEWPORT OPTIMIZATIONS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   5.1 Large Desktop: 1440x900 and above
+   -------------------------------------------------------------------------- */
+@media (min-width: 1440px) {
+  :root {
+    --container-max-width: 1360px;
+    --map-panel-width: 420px;
+  }
+
+  .container {
+    max-width: var(--container-max-width);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+  }
+
+  .stat-card {
+    padding: var(--space-6);
+  }
+
+  .stat-card-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  .map-panel {
+    width: var(--map-panel-width);
+    min-width: var(--map-panel-width);
+    max-width: var(--map-panel-width);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5.2 Standard HD Desktop: 1280x720 Viewport Targets
+   -------------------------------------------------------------------------- */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  :root {
+    --container-max-width: 1200px;
+  }
+
+  .container {
+    max-width: var(--container-max-width);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+  }
+
+  .map-panel {
+    width: var(--map-panel-width);
+    min-width: var(--map-panel-width);
+  }
+}
+
+/* Compact vertical height optimization (720px height viewports) */
+@media (min-width: 1025px) and (max-height: 760px) {
+  :root {
+    --header-height: var(--space-12); /* 48px compact header */
+  }
+
+  .page-header {
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+  }
+
+  .stat-card {
+    padding: var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .stat-card-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .dashboard-layout {
+    gap: var(--space-4);
+  }
+
+  .dashboard-section {
+    gap: var(--space-3);
+  }
+
+  .container {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .sidebar-nav {
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .nav-link {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5.3 Modern Mobile: 390x844 (iPhone 12/13/14 and similar modern smartphones)
+   -------------------------------------------------------------------------- */
+@media (max-width: 420px) {
+  /* Dynamic viewport height support */
+  .app {
+    min-height: 100dvh;
+  }
+
+  .app-body {
+    min-height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  .map-layout {
+    height: calc(100dvh - var(--header-height) - var(--bottom-nav-height));
+  }
+
+  /* iOS Safe Area Insets for Home Indicator Bar & Notch */
+  .bottom-nav {
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 0px));
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Optimized bottom sheet ratio for 844px height (leaving upper 45% clear for map) */
+  .map-panel {
+    max-height: 55vh;
+    max-height: 55dvh;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .map-panel.is-expanded {
+    max-height: 80vh;
+    max-height: 80dvh;
+  }
+
+  /* Compact header typography */
+  .header-brand {
+    font-size: var(--font-size-base);
+  }
+
+  .header-logo-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  /* Full width action stacks on small screens */
+  .auth-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .card-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .card-footer .btn {
+    width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+}
+
+
+/* ==========================================================================
+   6. PHASE 1.2 — GORIDE APP RESPONSIVE VIEWPORT OPTIMIZATIONS
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .goride-app-shell {
+    max-width: 100%;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .goride-customer-app {
+    max-width: 100%;
+    border-radius: 0;
+    border: none;
+  }
+
+  .goride-header {
+    padding: 12px 16px 20px;
+  }
+
+  .goride-services-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .goride-service-tile {
+    padding: 10px 4px;
+    border-radius: 14px;
+  }
+
+  .goride-service-icon-wrap {
+    width: 42px;
+    height: 42px;
+    font-size: 1.4rem;
+  }
+
+  .goride-service-name {
+    font-size: 0.76rem;
+  }
+
+  .goride-service-sub {
+    font-size: 0.65rem;
+  }
+
+  .goride-vehicle-sheet {
+    max-height: 65vh;
+    max-height: 65dvh;
+    padding: 10px 14px 20px;
+  }
+
+  .goride-vehicle-card {
+    padding: 10px 12px;
+  }
+
+  .goride-vehicle-img {
+    font-size: 1.5rem;
+    width: 42px;
+  }
+
+  .goride-vehicle-name {
+    font-size: 0.88rem;
+  }
+
+  .goride-vehicle-price {
+    font-size: 0.98rem;
+  }
+
+  .goride-confirm-pickup-sheet,
+  .goride-driver-sheet {
+    padding: 14px 16px 20px;
+  }
+}
+
+@media (max-width: 350px) {
+  .goride-services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .goride-brand-slogan {
+    display: none;
+  }
+}

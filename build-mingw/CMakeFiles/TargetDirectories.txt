@@ -1,0 +1,8 @@
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/dsa_routing.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/ride_rtree_server.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/test_road_graph.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/test_api_routing.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/test_auth.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/test.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/edit_cache.dir
+D:/Nam2_ky1/newDSA/RIDE-RTREE/build-mingw/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký tài khoản - GoRide</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <div class="auth-layout">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">🚗</div>
+                    <h1 class="auth-title">GoRide</h1>
+                    <p class="auth-subtitle">Tạo tài khoản mới</p>
+                </div>
+
+                <!-- Role Selector Tabs -->
+                <div style="display:flex; margin-bottom:var(--space-5); border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden;">
+                    <button type="button" id="tab-customer" class="btn btn-block" style="border-radius:0; border:none; background:var(--color-primary); color:white; font-weight:600;" onclick="selectRole('customer')">
+                        Khách hàng
+                    </button>
+                    <button type="button" id="tab-driver" class="btn btn-block" style="border-radius:0; border:none; background:var(--color-gray-100); color:var(--color-text-secondary); font-weight:600;" onclick="selectRole('driver')">
+                        Tài xế đối tác
+                    </button>
+                </div>
+
+                <div id="register-error" class="app-alert alert-error" style="display:none;">
+                    <span id="register-error-msg"></span>
+                    <button type="button" class="app-alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+                </div>
+
+                <div id="register-success" class="app-alert alert-success" style="display:none;">
+                    <span id="register-success-msg"></span>
+                </div>
+
+                <form id="register-form" class="auth-form" novalidate>
+                    <input type="hidden" id="register-role" value="customer">
+
+                    <div class="form-group">
+                        <label class="form-label" for="reg-name">Họ và tên <span style="color:var(--color-error);">*</span></label>
+                        <input type="text" id="reg-name" class="form-input" placeholder="Nguyễn Văn A" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="reg-email">Email <span style="color:var(--color-error);">*</span></label>
+                        <input type="email" id="reg-email" class="form-input" placeholder="email@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="reg-phone">Số điện thoại <span style="color:var(--color-error);">*</span></label>
+                        <input type="tel" id="reg-phone" class="form-input" placeholder="0901234567" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="reg-password">Mật khẩu <span style="color:var(--color-error);">*</span></label>
+                        <input type="password" id="reg-password" class="form-input" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="reg-confirm">Xác nhận mật khẩu <span style="color:var(--color-error);">*</span></label>
+                        <input type="password" id="reg-confirm" class="form-input" placeholder="Nhập lại mật khẩu" required>
+                    </div>
+
+                    <!-- Driver-specific fields -->
+                    <div id="driver-fields" style="display:none;">
+                        <div class="divider" style="margin:var(--space-3) 0;"></div>
+                        <p style="font-size:0.875rem; font-weight:600; color:var(--color-text-primary); margin-bottom:var(--space-3);">
+                            Thông tin đăng ký lái xe
+                        </p>
+
+                        <div class="form-group">
+                            <label class="form-label" for="reg-plate">Biển số xe <span style="color:var(--color-error);">*</span></label>
+                            <input type="text" id="reg-plate" class="form-input" placeholder="59A-123.45">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="reg-vehicle">Loại phương tiện <span style="color:var(--color-error);">*</span></label>
+                            <select id="reg-vehicle" class="form-select">
+                                <option value="">Chọn loại phương tiện</option>
+                                <option value="motorbike">Xe máy (GoRide Bike)</option>
+                                <option value="car4">Ô tô 4 chỗ (GoRide Car)</option>
+                                <option value="car7">Ô tô 7 chỗ (GoRide XL)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="reg-experience">Số năm kinh nghiệm</label>
+                            <input type="number" id="reg-experience" class="form-input" placeholder="Ví dụ: 2" min="0" max="50">
+                        </div>
+
+                        <div class="app-alert alert-info" style="font-size:0.8rem; margin-top:var(--space-2);">
+                            <span>ℹ️ Hồ sơ tài xế sẽ được Quản trị viên duyệt trên Bảng điều khiển trước khi có thể bắt đầu nhận chuyến.</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="register-btn" class="btn btn-primary btn-block btn-lg" style="margin-top:var(--space-3);">
+                        Hoàn tất đăng ký
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <span>Đã có tài khoản?</span>
+                    <a href="login.html">Đăng nhập</a>
+                    <span style="color:var(--color-border);">•</span>
+                    <a href="../index.html">Về trang chủ</a>
+                </div>
+            </div>
+
+            <!-- Page Footer -->
+            <p class="auth-page-footer">
+                GoRide • Đồ án môn học Cấu trúc Dữ liệu & Giải thuật (DSA) • 
+                <a href="../index.html">Trang chủ công khai</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script>
+        let currentRole = 'customer';
+
+        function selectRole(role) {
+            currentRole = role;
+            document.getElementById('register-role').value = role;
+            const tabC = document.getElementById('tab-customer');
+            const tabD = document.getElementById('tab-driver');
+            const driverFields = document.getElementById('driver-fields');
+
+            if (role === 'customer') {
+                tabC.style.background = 'var(--color-primary)';
+                tabC.style.color = 'white';
+                tabD.style.background = 'var(--color-gray-100)';
+                tabD.style.color = 'var(--color-text-secondary)';
+                driverFields.style.display = 'none';
+            } else {
+                tabD.style.background = 'var(--color-primary)';
+                tabD.style.color = 'white';
+                tabC.style.background = 'var(--color-gray-100)';
+                tabC.style.color = 'var(--color-text-secondary)';
+                driverFields.style.display = 'block';
+            }
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const errorDiv = document.getElementById('register-error');
+            const errorMsg = document.getElementById('register-error-msg');
+            const successDiv = document.getElementById('register-success');
+            const successMsg = document.getElementById('register-success-msg');
+            const btn = document.getElementById('register-btn');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+
+            if (!name || !email || !phone || !password) {
+                errorMsg.textContent = 'Vui lòng điền đầy đủ các thông tin bắt buộc (*)';
+                errorDiv.style.display = 'flex';
+                return;
+            }
+
+            if (password !== confirm) {
+                errorMsg.textContent = 'Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.';
+                errorDiv.style.display = 'flex';
+                return;
+            }
+
+            const userData = {
+                name,
+                email,
+                phone,
+                password,
+                role: currentRole
+            };
+
+            if (currentRole === 'driver') {
+                userData.licensePlate = document.getElementById('reg-plate').value.trim();
+                userData.vehicleType = document.getElementById('reg-vehicle').value;
+                userData.experience = document.getElementById('reg-experience').value;
+                if (!userData.licensePlate || !userData.vehicleType) {
+                    errorMsg.textContent = 'Vui lòng cung cấp biển số xe và loại phương tiện đăng ký';
+                    errorDiv.style.display = 'flex';
+                    return;
+                }
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý đăng ký...';
+
+            try {
+                if (typeof apiClient === 'undefined') {
+                    throw new Error('ApiClient chưa sẵn sàng. Vui lòng kiểm tra kết nối mạng hoặc làm mới trang.');
+                }
+
+                try {
+                    const apiRes = await apiClient.post('/auth/register', userData);
+                    if (!apiRes || !apiRes.data || !apiRes.data.success) {
+                        throw new Error(apiRes?.data?.error || 'Đăng ký không thành công.');
+                    }
+                } catch (apiErr) {
+                    if (apiErr instanceof ApiError || (apiErr.status !== undefined && apiErr.status > 0)) {
+                        throw new Error(apiErr.message || 'Đăng ký không thành công.');
+                    }
+                    throw new Error(`Không thể kết nối đến máy chủ C++ (Backend offline tại cổng 8080). Chi tiết: ${apiErr.message || 'NetworkError'}. Vui lòng khởi động máy chủ C++ để tiếp tục.`);
+                }
+
+                successMsg.textContent = currentRole === 'driver'
+                    ? 'Đăng ký tài xế thành công! Hồ sơ của bạn đang ở trạng thái CHỜ DUYỆT (PENDING). Quản trị viên cần phê duyệt trước khi bạn có thể đăng nhập nhận chuyến.'
+                    : 'Đăng ký tài khoản thành công! Đang chuyển đến trang đăng nhập...';
+                successDiv.style.display = 'flex';
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, currentRole === 'driver' ? 2500 : 1500);
+            } catch (err) {
+                errorMsg.textContent = err.message || 'Đăng ký không thành công. Vui lòng thử lại.';
+                errorDiv.style.display = 'flex';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Hoàn tất đăng ký';
+            }
+        });
+    </script>
+</body>
+</html>

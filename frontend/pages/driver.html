@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Tài xế | GoRide — Đặt xe dễ dàng, đi mọi hành trình.</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <a href="../index.html" style="text-decoration:none; display:flex; align-items:center; gap:var(--space-2);">
+                    <span style="font-size:1.25rem;">🚗</span>
+                    <span class="header-brand" style="color:var(--color-primary); font-weight:800;">GoRide</span>
+                </a>
+                <span class="badge badge-info" style="margin-left:var(--space-2);">Tài xế</span>
+            </div>
+            <nav class="header-nav desktop-only">
+                <a href="../index.html" class="nav-link">Trang chủ</a>
+                <a href="#home" class="nav-link active">Nhận chuyến</a>
+                <a href="#trips" class="nav-link">Lịch sử</a>
+                <a href="#earnings" class="nav-link">Thu nhập</a>
+            </nav>
+            <div class="user-menu">
+                <button class="user-menu-trigger" id="user-menu-btn">
+                    <div class="avatar avatar-sm" data-user-avatar>T</div>
+                    <span class="user-menu-name desktop-only" data-user-name>Tài xế</span>
+                </button>
+                <div class="user-menu-dropdown" id="user-menu-dropdown" style="display:none;">
+                    <div class="user-menu-item" data-user-name>Tài xế</div>
+                    <a href="../index.html" class="user-menu-item" style="text-decoration:none; color:inherit;">Trang chủ công khai</a>
+                    <div class="user-menu-divider"></div>
+                    <div class="user-menu-item user-menu-item-danger" data-action="logout">Đăng xuất</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Driver Status Bar -->
+            <div class="driver-status" id="driver-status-bar">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-4);">
+                    <div style="display:flex; align-items:center; gap:var(--space-3);">
+                        <span class="status-dot status-offline" id="status-indicator"></span>
+                        <span id="status-text" style="font-weight:600;">Ngoại tuyến</span>
+                    </div>
+                    <label class="driver-toggle">
+                        <input type="checkbox" id="online-toggle">
+                        <span class="driver-toggle-btn"></span>
+                    </label>
+                </div>
+                <div class="driver-stats-bar" id="driver-stats">
+                    <div class="driver-stat-item">
+                        <span class="driver-stat-value" id="stat-trips">0</span>
+                        <span class="driver-stat-label">Chuyến hôm nay</span>
+                    </div>
+                    <div class="driver-stat-item">
+                        <span class="driver-stat-value" id="stat-earnings">0 ₫</span>
+                        <span class="driver-stat-label">Thu nhập</span>
+                    </div>
+                    <div class="driver-stat-item">
+                        <span class="driver-stat-value" id="stat-rating">--</span>
+                        <span class="driver-stat-label">Đánh giá</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-layout">
+                <!-- Map -->
+                <div class="map-container" id="driver-map"></div>
+
+                <!-- Side Panel -->
+                <div class="map-panel" id="driver-panel">
+                    <div class="panel-handle mobile-only"></div>
+
+                    <!-- Ride Requests -->
+                    <div id="ride-requests-section">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Yêu cầu mới</h3>
+                            <span class="badge badge-primary" id="request-count" style="display:none;">0</span>
+                        </div>
+                        <div class="panel-body" id="ride-requests">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <p class="empty-state-title">Chưa có yêu cầu</p>
+                                <p class="empty-state-description">Bật trạng thái trực tuyến để nhận yêu cầu mới</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Trip -->
+                    <div id="active-trip" style="display:none;">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Chuyến đi hiện tại</h3>
+                        </div>
+                        <div class="panel-body">
+                            <div class="active-trip">
+                                <div class="active-trip-progress">
+                                    <div class="active-trip-progress-track">
+                                        <div class="active-trip-progress-fill" id="trip-progress" style="width:0%;"></div>
+                                    </div>
+                                </div>
+                                <div class="active-trip-phase" id="trip-phase-label">Đang đến điểm đón</div>
+
+                                <div class="active-trip-passenger" id="trip-passenger">
+                                    <div class="avatar avatar-sm">K</div>
+                                    <div>
+                                        <strong id="passenger-name">Khách hàng</strong>
+                                        <div style="font-size:0.8rem; color:var(--color-gray-500);" id="passenger-phone">0901234567</div>
+                                    </div>
+                                </div>
+
+                                <div class="active-trip-route" id="trip-route-info">
+                                    <div><span class="location-icon location-icon-pickup"></span> <span id="trip-pickup">--</span></div>
+                                    <div><span class="location-icon location-icon-destination"></span> <span id="trip-destination">--</span></div>
+                                </div>
+
+                                <button type="button" id="trip-action-btn" class="btn btn-primary btn-block btn-lg">
+                                    Đã đến điểm đón
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="bottom-nav mobile-only">
+            <a href="#home" class="bottom-nav-item active">
+                <span class="bottom-nav-icon">🏠</span>
+                <span class="bottom-nav-label">Trang chủ</span>
+            </a>
+            <a href="#trips" class="bottom-nav-item">
+                <span class="bottom-nav-icon">📋</span>
+                <span class="bottom-nav-label">Chuyến đi</span>
+            </a>
+            <a href="#earnings" class="bottom-nav-item">
+                <span class="bottom-nav-icon">💰</span>
+                <span class="bottom-nav-label">Thu nhập</span>
+            </a>
+            <a href="#account" class="bottom-nav-item">
+                <span class="bottom-nav-icon">👤</span>
+                <span class="bottom-nav-label">Tài khoản</span>
+            </a>
+        </nav>
+
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script src="../js/map/map-controller.js"></script>
+    <script src="../js/map/map-renderer.js"></script>
+    <script src="../js/driver/driver.js"></script>
+</body>
+</html>

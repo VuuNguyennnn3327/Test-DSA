@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - GoRide</title>
+    <meta name="description" content="Đăng nhập tài khoản GoRide - Đặt xe dễ dàng, đi mọi hành trình.">
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+    <div class="auth-layout">
+        <div class="auth-container">
+            <!-- Auth Card -->
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">🚗</div>
+                    <h1 class="auth-title">GoRide</h1>
+                    <p class="auth-subtitle">Đặt xe dễ dàng, đi mọi hành trình.</p>
+                </div>
+
+                <form id="login-form" class="auth-form" novalidate>
+                    <div id="login-error" class="app-alert alert-error" style="display:none;">
+                        <span id="login-error-msg"></span>
+                        <button type="button" class="app-alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Tài khoản / Email <span style="color:var(--color-error);">*</span></label>
+                        <input type="text" id="login-email" class="form-input" placeholder="admin hoặc email@example.com" required autocomplete="username" autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="login-password">Mật khẩu <span style="color:var(--color-error);">*</span></label>
+                        <input type="password" id="login-password" class="form-input" placeholder="Nhập mật khẩu (ví dụ: admin@123)" required autocomplete="current-password" minlength="6">
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="remember-me" class="form-check-input">
+                        <label for="remember-me" class="form-check-label">Ghi nhớ đăng nhập</label>
+                    </div>
+
+                    <div style="margin:var(--space-2) 0 var(--space-3) 0; padding:var(--space-2) var(--space-3); background:var(--color-gray-100); border:1px dashed var(--color-gray-300); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--color-gray-700); line-height:1.4;">
+                        🛡️ <strong>Admin mặc định:</strong> <code style="color:var(--color-primary); font-weight:700;">admin</code> &bull; Mật khẩu: <code style="color:var(--color-primary); font-weight:700;">admin@123</code>
+                    </div>
+
+                    <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg">
+                        Đăng nhập
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <span>Chưa có tài khoản?</span>
+                    <a href="register.html">Đăng ký ngay</a>
+                    <span style="color:var(--color-border);">•</span>
+                    <a href="../index.html">Về trang chủ</a>
+                </div>
+            </div>
+
+            <!-- Page Footer (neatly below card, never peeking behind) -->
+            <p class="auth-page-footer">
+                GoRide • Đồ án môn học Cấu trúc Dữ liệu & Giải thuật (DSA) • 
+                <a href="../index.html">Trang chủ</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('login-form');
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            const btn = document.getElementById('login-btn');
+            const errorDiv = document.getElementById('login-error');
+            const errorMsg = document.getElementById('login-error-msg');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+
+                if (!email) {
+                    errorMsg.textContent = 'Vui lòng nhập địa chỉ email.';
+                    errorDiv.style.display = 'flex';
+                    emailInput.focus();
+                    return;
+                }
+
+                if (!password || password.length < 6) {
+                    errorMsg.textContent = 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.';
+                    errorDiv.style.display = 'flex';
+                    passwordInput.focus();
+                    return;
+                }
+
+                errorDiv.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'Đang xác thực với máy chủ...';
+
+                try {
+                    // Authentic backend API connection via ApiClient
+                    let result = null;
+                    if (typeof apiClient !== 'undefined') {
+                        try {
+                            const apiRes = await apiClient.post('/auth/login', { email, password });
+                            if (apiRes && apiRes.data) {
+                                result = apiRes.data;
+                            }
+                        } catch (apiErr) {
+                            if (apiErr instanceof ApiError || (apiErr.status !== undefined && apiErr.status > 0)) {
+                                throw new Error(apiErr.message || 'Đăng nhập không thành công.');
+                            }
+                            throw new Error(`Không thể kết nối đến máy chủ C++ (Backend offline tại cổng 8080). Chi tiết: ${apiErr.message || 'NetworkError'}. Vui lòng khởi động máy chủ C++ để tiếp tục.`);
+                        }
+                    }
+
+                    if (!result || !result.user) {
+                        throw new Error('Máy chủ không phản hồi dữ liệu người dùng hợp lệ.');
+                    }
+
+                    sessionManager.login(result.user, result.token);
+
+                    // Check redirect parameter
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectTarget = urlParams.get('redirect');
+
+                    if (redirectTarget) {
+                        const targetKey = redirectTarget.replace('.html', '').toLowerCase();
+                        if (['customer', 'driver', 'admin'].includes(targetKey)) {
+                            window.location.href = `${targetKey}.html`;
+                            return;
+                        }
+                    }
+
+                    // Default role-based routing
+                    const role = result.user.role;
+                    if (role === 'driver') {
+                        window.location.href = 'driver.html';
+                    } else if (role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'customer.html';
+                    }
+                } catch (err) {
+                    errorMsg.textContent = err.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+                    errorDiv.style.display = 'flex';
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Đăng nhập';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

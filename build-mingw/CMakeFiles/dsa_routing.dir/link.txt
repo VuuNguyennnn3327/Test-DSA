@@ -1,0 +1,2 @@
+C:\msys64\mingw64\bin\ar.exe qc libdsa_routing.a CMakeFiles/dsa_routing.dir/backend/src/road_graph.cpp.obj CMakeFiles/dsa_routing.dir/backend/src/dijkstra.cpp.obj CMakeFiles/dsa_routing.dir/backend/src/spatial_grid.cpp.obj CMakeFiles/dsa_routing.dir/backend/src/http_server.cpp.obj CMakeFiles/dsa_routing.dir/backend/src/database.cpp.obj CMakeFiles/dsa_routing.dir/backend/src/auth_service.cpp.obj
+C:\msys64\mingw64\bin\ranlib.exe libdsa_routing.a

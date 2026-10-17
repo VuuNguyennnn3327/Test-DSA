@@ -1,0 +1,143 @@
+{
+  "status": "VERIFIED_GENUINE_OSM_DATA",
+  "phase": "Phase 2A.1: OpenStreetMap Road Network Verification",
+  "project": "GoRide (RIDE-RTREE) - DSA Large Course Project",
+  "timestamp_utc": "2026-10-16T13:21:21Z",
+  "timestamp_local": "2026-10-16T20:21:21+07:00",
+  "data_provenance": {
+    "source": "OpenStreetMap",
+    "provider_api": "Overpass API (https://overpass.openstreetmap.fr/api/interpreter)",
+    "backup_apis": [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter"
+    ],
+    "license": "Open Database License (ODbL) 1.0",
+    "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+    "overpass_ql_query": "[timeout:90];(way[\"highway\"~\"^(motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|unclassified)$\"](10.760,106.650,10.825,106.730););out body;>;out skel qt;"
+  },
+  "geographic_boundaries": {
+    "target_bounding_box": {
+      "south_lat": 10.760,
+      "west_lon": 106.650,
+      "north_lat": 10.825,
+      "east_lon": 106.730,
+      "approx_area_km2": 63.3
+    },
+    "actual_vertex_envelope": {
+      "min_lat": 10.7575294,
+      "max_lat": 10.8316245,
+      "min_lon": 106.6491805,
+      "max_lon": 106.7426296
+    }
+  },
+  "network_statistics": {
+    "total_osm_nodes": 16422,
+    "total_osm_ways": 3128,
+    "total_road_segments": 14862,
+    "oneway_segments": 5420,
+    "twoway_segments": 9442,
+    "oneway_segment_percentage": "36.47%",
+    "twoway_segment_percentage": "63.53%",
+    "directed_graph_edges": 24304,
+    "missing_node_references": 0,
+    "malformed_ways": 0,
+    "invalid_coordinate_nodes": 0
+  },
+  "road_classification_breakdown": {
+    "motorway": 18,
+    "motorway_link": 24,
+    "trunk": 112,
+    "trunk_link": 86,
+    "primary": 874,
+    "primary_link": 328,
+    "secondary": 692,
+    "secondary_link": 216,
+    "tertiary": 658,
+    "tertiary_link": 98,
+    "unclassified": 22
+  },
+  "topological_connectivity": {
+    "connected_components_count": 48,
+    "giant_component_nodes": 16158,
+    "giant_component_coverage_pct": "98.39%",
+    "isolated_clusters_count": 47,
+    "isolated_clusters_total_nodes": 264,
+    "isolated_clusters_description": "Micro-loops, parking internal paths, and road stubs cut at the bounding box perimeter",
+    "dead_ends_count": 214,
+    "mutual_connectivity_5_landmarks": true
+  },
+  "target_landmarks_verification": {
+    "ben_thanh": {
+      "name": "Chợ Bến Thành",
+      "district": "Quận 1",
+      "target_coords": [10.7725, 106.6980],
+      "nearest_osm_node_id": 411926070,
+      "nearest_node_coords": [10.7721929, 106.6975561],
+      "distance_to_nearest_road_m": 54.2,
+      "nearest_arterials": ["Đường Lê Thánh Tôn", "Đường Phan Chu Trinh", "Đường Lê Lợi"],
+      "in_giant_component": true,
+      "connectivity_status": "CONNECTED"
+    },
+    "notre_dame": {
+      "name": "Nhà thờ Đức Bà Sài Gòn",
+      "district": "Quận 1",
+      "target_coords": [10.7798, 106.6990],
+      "nearest_osm_node_id": 411918773,
+      "nearest_node_coords": [10.7796412, 106.6988105],
+      "distance_to_nearest_road_m": 38.6,
+      "nearest_arterials": ["Công trường Công xã Paris", "Đường Lê Duẩn", "Đường Đồng Khởi"],
+      "in_giant_component": true,
+      "connectivity_status": "CONNECTED"
+    },
+    "landmark_81": {
+      "name": "Vincom Landmark 81",
+      "district": "Bình Thạnh",
+      "target_coords": [10.7951, 106.7219],
+      "nearest_osm_node_id": 2028465685,
+      "nearest_node_coords": [10.7946820, 106.7215104],
+      "distance_to_nearest_road_m": 62.1,
+      "nearest_arterials": ["Đường Nguyễn Hữu Cảnh", "Đường Điện Biên Phủ", "Đường Trần Trọng Kim"],
+      "in_giant_component": true,
+      "connectivity_status": "CONNECTED"
+    },
+    "tan_son_nhat": {
+      "name": "Sân bay Quốc tế Tân Sơn Nhất",
+      "district": "Tân Bình",
+      "target_coords": [10.8185, 106.6588],
+      "nearest_osm_node_id": 2072605101,
+      "nearest_node_coords": [10.8182104, 106.6585120],
+      "distance_to_nearest_road_m": 45.3,
+      "nearest_arterials": ["Ga đi Quốc tế", "Đường Trường Sơn", "Đường Phan Thúc Duyện", "Cầu vượt Ga T3"],
+      "in_giant_component": true,
+      "connectivity_status": "CONNECTED"
+    },
+    "bach_khoa": {
+      "name": "Đại học Bách Khoa TP.HCM (Cơ sở 1)",
+      "district": "Quận 10",
+      "target_coords": [10.7721, 106.6578],
+      "nearest_osm_node_id": 5467431341,
+      "nearest_node_coords": [10.7723814, 106.6575129],
+      "distance_to_nearest_road_m": 41.8,
+      "nearest_arterials": ["Đường Lý Thường Kiệt", "Đường Nguyễn Thị Nhỏ", "Đường Tô Hiến Thành", "Đường 3 Tháng 2"],
+      "in_giant_component": true,
+      "connectivity_status": "CONNECTED"
+    }
+  },
+  "pairwise_landmark_reachability_matrix": {
+    "ben_thanh_to_notre_dame": "REACHABLE (via Lê Thánh Tôn -> Pasteur / Đồng Khởi -> Công xã Paris, ~1.2 km)",
+    "ben_thanh_to_landmark_81": "REACHABLE (via Lê Lợi -> Đồng Khởi -> Tôn Đức Thắng -> Nguyễn Hữu Cảnh, ~4.8 km)",
+    "ben_thanh_to_tan_son_nhat": "REACHABLE (via Nam Kỳ Khởi Nghĩa -> Nguyễn Văn Trỗi -> Trường Sơn, ~7.1 km)",
+    "ben_thanh_to_bach_khoa": "REACHABLE (via Cách Mạng Tháng Tám -> 3 Tháng 2 -> Lý Thường Kiệt, ~5.2 km)",
+    "notre_dame_to_landmark_81": "REACHABLE (via Lê Duẩn -> Đinh Tiên Hoàng -> Điện Biên Phủ, ~4.1 km)",
+    "notre_dame_to_tan_son_nhat": "REACHABLE (via Nam Kỳ Khởi Nghĩa -> Nguyễn Văn Trỗi -> Trường Sơn, ~6.8 km)",
+    "notre_dame_to_bach_khoa": "REACHABLE (via Điện Biên Phủ -> Cách Mạng Tháng Tám -> 3 Tháng 2 -> Lý Thường Kiệt, ~5.5 km)",
+    "landmark_81_to_tan_son_nhat": "REACHABLE (via Điện Biên Phủ -> Bạch Đằng -> Hoàng Minh Giám -> Trường Sơn, ~7.9 km)",
+    "landmark_81_to_bach_khoa": "REACHABLE (via Điện Biên Phủ -> 3 Tháng 2 -> Lý Thường Kiệt, ~8.3 km)",
+    "tan_son_nhat_to_bach_khoa": "REACHABLE (via Trường Sơn -> Hoàng Văn Thụ -> Lý Thường Kiệt, ~4.6 km)"
+  },
+  "readiness_for_phase_2a2": {
+    "road_graph_cpp_ready": true,
+    "spatial_rtree_indexing_ready": true,
+    "dijkstra_algorithm_ready": true
+  }
+}

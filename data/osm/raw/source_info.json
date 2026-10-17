@@ -1,0 +1,86 @@
+{
+  "source": "OpenStreetMap",
+  "api_endpoint": "https://overpass.openstreetmap.fr/api/interpreter",
+  "backup_endpoints": [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter"
+  ],
+  "download_timestamp_utc": "2026-10-16T13:21:21Z",
+  "download_timestamp_local": "2026-10-16T20:21:21+07:00",
+  "license": "Open Database License (ODbL) 1.0",
+  "attribution": "© OpenStreetMap contributors",
+  "bounding_box": {
+    "south_lat": 10.760,
+    "west_lon": 106.650,
+    "north_lat": 10.825,
+    "east_lon": 106.730,
+    "area_sq_km": 63.3
+  },
+  "covered_landmarks": [
+    {
+      "id": "ben_thanh",
+      "name": "Chợ Bến Thành",
+      "district": "Quận 1",
+      "lat": 10.7725,
+      "lon": 106.6980,
+      "connected_arterials": ["Lê Lợi", "Lê Thánh Tôn", "Phạm Hồng Thái", "Nguyễn Thị Nghĩa"]
+    },
+    {
+      "id": "notre_dame",
+      "name": "Nhà thờ Đức Bà Sài Gòn",
+      "district": "Quận 1",
+      "lat": 10.7798,
+      "lon": 106.6990,
+      "connected_arterials": ["Công xã Paris", "Lê Duẩn", "Đồng Khởi", "Hai Bà Trưng"]
+    },
+    {
+      "id": "landmark_81",
+      "name": "Vincom Landmark 81",
+      "district": "Bình Thạnh",
+      "lat": 10.7951,
+      "lon": 106.7219,
+      "connected_arterials": ["Điện Biên Phủ", "Nguyễn Hữu Cảnh", "Trần Trọng Kim"]
+    },
+    {
+      "id": "tan_son_nhat",
+      "name": "Sân bay Quốc tế Tân Sơn Nhất",
+      "district": "Tân Bình",
+      "lat": 10.8185,
+      "lon": 106.6588,
+      "connected_arterials": ["Trường Sơn", "Hồng Hà", "Bạch Đằng", "Phan Thúc Duyện", "Cầu vượt Ga T3"]
+    },
+    {
+      "id": "bach_khoa",
+      "name": "Trường Đại học Bách Khoa TP.HCM (Cơ sở 1)",
+      "district": "Quận 10",
+      "lat": 10.7721,
+      "lon": 106.6578,
+      "connected_arterials": ["Lý Thường Kiệt", "Tô Hiến Thành", "3 Tháng 2", "Nguyễn Thị Nhỏ"]
+    }
+  ],
+  "filter_criteria": {
+    "highway_types": [
+      "motorway",
+      "motorway_link",
+      "trunk",
+      "trunk_link",
+      "primary",
+      "primary_link",
+      "secondary",
+      "secondary_link",
+      "tertiary",
+      "tertiary_link",
+      "unclassified"
+    ],
+    "target_vehicles": ["motorcycle", "car"]
+  },
+  "recovery_info": {
+    "phase": "Phase 2A.1 Recovery",
+    "status": "RAW_CACHED_READY_FOR_LOCAL_EXTRACTION",
+    "cache_path": "C:\\Users\\HP\\.gemini\\antigravity\\brain\\ebbbea0e-3aef-4f2a-832c-834826ee85dc\\.system_generated\\steps\\576\\content.md",
+    "raw_xml_file_target": "data/osm/raw/hcmc_road_network.osm.xml",
+    "extraction_script": "data/osm/raw/extract_cached_xml.py",
+    "overpass_download_script": "data/osm/raw/download_osm.py"
+  }
+}
+

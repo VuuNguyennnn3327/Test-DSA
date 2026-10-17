@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị hệ thống | GoRide Admin</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="app-sidebar" id="sidebar">
+            <div class="sidebar-header" style="padding:var(--space-4); border-bottom:1px solid var(--color-gray-200); display:flex; align-items:center;">
+                <span style="font-size:1.25rem; margin-right:var(--space-2);">🚗</span>
+                <span style="font-weight:800; font-size:1.15rem; color:var(--color-primary);">GoRide</span>
+                <span class="badge badge-danger" style="margin-left:auto;">Admin</span>
+            </div>
+            <nav class="nav-list" style="padding:var(--space-2);">
+                <a href="../index.html" class="nav-item nav-link">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Về trang chủ</span>
+                </a>
+                <a href="#dashboard" class="nav-item nav-link active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Tổng quan</span>
+                </a>
+                <a href="#trips" class="nav-item nav-link" data-tab="trips">
+                    <span class="nav-icon">🚗</span>
+                    <span class="nav-label">Chuyến đi</span>
+                </a>
+                <a href="#drivers" class="nav-item nav-link" data-tab="drivers">
+                    <span class="nav-icon">👨‍✈️</span>
+                    <span class="nav-label">Tài xế</span>
+                </a>
+                <a href="#dsa" class="nav-item nav-link" data-tab="dsa">
+                    <span class="nav-icon">🧮</span>
+                    <span class="nav-label">DSA Demo</span>
+                </a>
+            </nav>
+            <div style="margin-top:auto; padding:var(--space-3);">
+                <a href="#" class="nav-item nav-link" data-action="logout" style="color:var(--color-error);">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-label">Đăng xuất</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Header (Mobile) -->
+        <header class="app-header">
+            <button class="btn btn-ghost btn-icon mobile-only" id="sidebar-toggle">☰</button>
+            <div class="header-logo">
+                <span class="header-brand">Quản trị</span>
+            </div>
+            <div class="user-menu">
+                <button class="user-menu-trigger" id="user-menu-btn">
+                    <div class="avatar avatar-sm" style="background:var(--color-error);">A</div>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="dashboard-layout" style="padding:var(--space-4);">
+                <div class="page-header">
+                    <h2>Tổng quan</h2>
+                    <span class="badge badge-warning">DỮ LIỆU MẪU</span>
+                </div>
+
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon" style="background:var(--color-primary-light); color:var(--color-primary);">🚗</div>
+                        <div class="stat-card-value" id="stat-total-rides">--</div>
+                        <div class="stat-card-label">Tổng chuyến đi</div>
+                        <div class="stat-card-trend trend-up" id="stat-rides-trend"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon" style="background:var(--color-accent-light, #e8f5e9); color:var(--color-accent);">👨‍✈️</div>
+                        <div class="stat-card-value" id="stat-active-drivers">--</div>
+                        <div class="stat-card-label">Tài xế hoạt động</div>
+                        <div class="stat-card-trend" id="stat-drivers-trend"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon" style="background:#fff3e0; color:var(--color-warning);">💰</div>
+                        <div class="stat-card-value" id="stat-revenue">--</div>
+                        <div class="stat-card-label">Doanh thu</div>
+                        <div class="stat-card-trend" id="stat-revenue-trend"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon" style="background:#e3f2fd; color:var(--color-info);">👥</div>
+                        <div class="stat-card-value" id="stat-customers">--</div>
+                        <div class="stat-card-label">Khách hàng mới</div>
+                        <div class="stat-card-trend" id="stat-customers-trend"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3>Bản đồ tổng quan</h3>
+                    <div id="admin-map" style="height:400px; border-radius:var(--radius-md); overflow:hidden;"></div>
+                </div>
+
+                <div class="dashboard-section">
+                    <h3>Chuyến đi gần đây</h3>
+                    <div class="data-table-responsive">
+                        <table class="data-table" id="recent-trips-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Khách hàng</th>
+                                    <th>Tài xế</th>
+                                    <th>Trạng thái</th>
+                                    <th>Giá</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-trips-body">
+                                <tr><td colspan="5" class="text-center">Đang tải...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trips Tab -->
+            <div id="tab-trips" style="display:none; padding:var(--space-4);">
+                <div class="page-header">
+                    <h2>Quản lý chuyến đi</h2>
+                    <span class="badge badge-warning">DỮ LIỆU MẪU</span>
+                </div>
+                <div class="admin-filters" style="margin-bottom:var(--space-4); display:flex; gap:var(--space-3); flex-wrap:wrap;">
+                    <select class="form-select" style="width:auto;">
+                        <option>Tất cả trạng thái</option>
+                        <option>Đang chờ</option>
+                        <option>Đang thực hiện</option>
+                        <option>Hoàn thành</option>
+                        <option>Đã hủy</option>
+                    </select>
+                    <input type="date" class="form-input" style="width:auto;">
+                    <input type="date" class="form-input" style="width:auto;">
+                </div>
+                <div class="data-table-responsive">
+                    <table class="data-table admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Khách hàng</th>
+                                <th>Tài xế</th>
+                                <th>Điểm đón</th>
+                                <th>Điểm đến</th>
+                                <th>Trạng thái</th>
+                                <th>Giá</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-trips-body">
+                            <tr><td colspan="7" class="text-center">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Drivers Tab -->
+            <div id="tab-drivers" style="display:none; padding:var(--space-4);">
+                <div class="page-header">
+                    <h2>Quản lý tài xế</h2>
+                    <span class="badge badge-success" id="drivers-badge-status">C++ REST API</span>
+                </div>
+                <div class="dashboard-section">
+                    <h3>Yêu cầu đăng ký chờ duyệt</h3>
+                    <div id="driver-approvals">
+                        <div class="empty-state">
+                            <p class="empty-state-title">Đang tải...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DSA Tab -->
+            <div id="tab-dsa" style="display:none; padding:var(--space-4);">
+                <div class="page-header">
+                    <h2>DSA Demo</h2>
+                    <span class="badge badge-info">SHELL ONLY</span>
+                </div>
+                <div class="card" style="padding:var(--space-6); text-align:center;">
+                    <div style="font-size:3rem; margin-bottom:var(--space-4);">𮈮</div>
+                    <h3>Trang minh họa thuật toán</h3>
+                    <p style="color:var(--color-gray-600); margin:var(--space-3) 0;">R-Tree, Range Search, k-NN, Dijkstra</p>
+                    <a href="dsa-demo.html" class="btn btn-primary">Mở DSA Demo</a>
+                </div>
+            </div>
+        </main>
+
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script src="../js/map/map-controller.js"></script>
+    <script src="../js/map/map-renderer.js"></script>
+    <script src="../js/admin/admin.js"></script>
+</body>
+</html>

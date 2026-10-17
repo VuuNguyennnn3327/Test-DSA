@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoRide — Đặt xe dễ dàng, đi mọi hành trình.</title>
+    <meta name="description" content="GoRide - Ứng dụng đặt xe thông minh, tối ưu lộ trình và ghép nối tài xế với cấu trúc R-Tree và thuật toán Dijkstra.">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="app-home-body">
+    <!-- Desktop Top Navigation Bar (>= 1025px) -->
+    <nav class="goride-desktop-navbar">
+        <div class="goride-desktop-nav-inner">
+            <a href="index.html" class="goride-desktop-nav-brand">
+                <div class="brand-logo">🚗</div>
+                <div class="brand-text">
+                    <span class="brand-name">GoRide</span>
+                    <span class="brand-tagline">Đặt xe dễ dàng, đi mọi hành trình.</span>
+                </div>
+            </a>
+
+            <div class="goride-desktop-nav-links">
+                <a href="index.html" class="goride-desktop-nav-link active">Trang chủ</a>
+                <a href="pages/customer.html" class="goride-desktop-nav-link">Đặt chuyến ngay</a>
+                <a href="pages/customer.html#history" class="goride-desktop-nav-link">Lịch sử chuyến</a>
+                <a href="pages/dsa-demo.html" class="goride-desktop-nav-link">
+                    <span>🌳</span> DSA Lab
+                </a>
+            </div>
+
+            <div class="goride-desktop-nav-actions">
+                <!-- Honest Backend Status Pill -->
+                <div class="goride-backend-status-pill" id="desktop-backend-status" title="Trạng thái kết nối máy chủ C++">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444;"></span>
+                    <span>Backend C++: Ngoại tuyến</span>
+                </div>
+
+                <!-- Auth / Profile -->
+                <div data-auth="guest">
+                    <a href="pages/login.html" class="btn btn-primary btn-sm" style="border-radius:18px; padding:6px 16px;">
+                        Đăng nhập
+                    </a>
+                </div>
+                <div data-auth="user" style="display: none;">
+                    <a href="pages/customer.html" class="goride-user-avatar-btn" id="desktop-user-badge" title="Hồ sơ cá nhân">
+                        <span data-user-avatar>K</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- App Shell Container (Responsive Desktop & Mobile) -->
+    <div class="goride-app-shell">
+        <!-- App Top Header (Mobile & Tablet) -->
+        <header class="goride-header mobile-header-hide-desktop">
+            <div class="goride-header-top">
+                <a href="index.html" class="goride-brand-pill">
+                    <div class="goride-brand-logo-icon">🚗</div>
+                    <div>
+                        <div class="goride-brand-title">GoRide</div>
+                        <div class="goride-brand-slogan">Đặt xe dễ dàng, đi mọi hành trình.</div>
+                    </div>
+                </a>
+
+                <div class="goride-header-actions">
+                    <!-- Subtle DSA Lab link -->
+                    <a href="pages/dsa-demo.html" class="goride-dsa-badge" title="Mô phỏng giải thuật R-Tree & Dijkstra">
+                        <span>🌳</span>
+                        <span>DSA Lab</span>
+                    </a>
+
+                    <!-- User Profile / Auth Toggle -->
+                    <div data-auth="guest">
+                        <a href="pages/login.html" class="goride-user-avatar-btn" title="Đăng nhập">
+                            👤
+                        </a>
+                    </div>
+                    <div data-auth="user" style="display: none;">
+                        <a href="pages/customer.html" class="goride-user-avatar-btn" id="user-profile-badge" title="Hồ sơ người dùng">
+                            <span data-user-avatar>K</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Search Pill: "Bạn muốn đi đâu hôm nay?" (ref-01) -->
+            <a href="pages/customer.html" class="goride-search-pill" id="home-search-pill">
+                <span class="goride-search-icon">🔍</span>
+                <span class="goride-search-text">Bạn muốn đi đâu hôm nay?</span>
+                <span class="goride-search-action">Đặt xe →</span>
+            </a>
+        </header>
+
+        <!-- Main Content Area: Responsive Grid on Desktop -->
+        <main class="goride-home-content">
+            <div class="goride-desktop-home-grid">
+                <!-- Left Column (Desktop Hero Booking & Services) -->
+                <div class="goride-desktop-hero-booking-card">
+                    <!-- Desktop Prominent Search Action (Desktop only - mobile has header search pill) -->
+                    <div class="goride-desktop-hero-search desktop-only" style="margin-bottom: 24px;">
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+                            Bạn muốn di chuyển đến đâu hôm nay?
+                        </div>
+                        <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 14px 0;">
+                            Chọn điểm đón và điểm đến để GoRide điều phối xe gần bạn nhất.
+                        </p>
+                        <a href="pages/customer.html" class="goride-search-pill" style="box-shadow: 0 4px 16px rgba(0, 137, 123, 0.15);">
+                            <span class="goride-search-icon">🔍</span>
+                            <span class="goride-search-text">Nhập điểm đón và điểm đến...</span>
+                            <span class="goride-search-action">Bắt đầu đặt xe →</span>
+                        </a>
+                    </div>
+
+                    <!-- Services Section: 6 Vehicle Options -->
+                    <section class="goride-services-section">
+                        <div class="goride-section-header-compact">
+                            <h2 class="goride-section-title">
+                                <span>⚡</span> Dịch vụ di chuyển
+                            </h2>
+                            <span class="goride-instant-badge">Ghép tức thì</span>
+                        </div>
+
+                        <div class="goride-services-grid">
+                            <!-- GoRide Bike (Xe máy) -->
+                            <a href="pages/customer.html?service=bike" class="goride-service-tile featured" title="Đặt xe máy GoRide">
+                                <div class="goride-service-icon-wrap" style="color: #00897b;">
+                                    🛵
+                                </div>
+                                <div class="goride-service-name">Xe máy</div>
+                                <div class="goride-service-sub">Tiết kiệm</div>
+                            </a>
+
+                            <!-- GoRide Car (Ô tô 4 chỗ) -->
+                            <a href="pages/customer.html?service=car4" class="goride-service-tile featured" title="Đặt ô tô 4 chỗ GoRide">
+                                <div class="goride-service-icon-wrap" style="color: #0288d1;">
+                                    🚗
+                                </div>
+                                <div class="goride-service-name">Ô tô 4 chỗ</div>
+                                <div class="goride-service-sub">Phổ biến</div>
+                            </a>
+
+                            <!-- GoRide Plus (Xe sang cao cấp) -->
+                            <a href="pages/customer.html?service=premium" class="goride-service-tile" title="Đặt xe cao cấp GoRide Plus">
+                                <div class="goride-service-icon-wrap" style="color: #7c3aed;">
+                                    🚘
+                                </div>
+                                <div class="goride-service-name">GoRide Plus</div>
+                                <div class="goride-service-sub">Cao cấp</div>
+                            </a>
+
+                            <!-- GoRide XL (Xe 7 chỗ) -->
+                            <a href="pages/customer.html?service=car7" class="goride-service-tile" title="Đặt xe 7 chỗ GoRide XL">
+                                <div class="goride-service-icon-wrap" style="color: #ea580c;">
+                                    🚐
+                                </div>
+                                <div class="goride-service-name">Xe 7 chỗ</div>
+                                <div class="goride-service-sub">Rộng rãi</div>
+                            </a>
+
+                            <!-- Giao hàng -->
+                            <a href="pages/customer.html?service=delivery" class="goride-service-tile" title="Giao hàng hỏa tốc">
+                                <div class="goride-service-icon-wrap" style="color: #d97706;">
+                                    📦
+                                </div>
+                                <div class="goride-service-name">Giao hàng</div>
+                                <div class="goride-service-sub">Hỏa tốc</div>
+                            </a>
+
+                            <!-- Đặt trước -->
+                            <a href="pages/customer.html?service=schedule" class="goride-service-tile" title="Đặt xe theo lịch hẹn">
+                                <div class="goride-service-icon-wrap" style="color: #059669;">
+                                    📅
+                                </div>
+                                <div class="goride-service-name">Đặt trước</div>
+                                <div class="goride-service-sub">Hẹn giờ</div>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Promo Banner -->
+                    <div class="goride-promo-banner" onclick="window.location.href='pages/customer.html'">
+                        <div class="goride-promo-left">
+                            <h4>Ưu đãi 20% hôm nay</h4>
+                            <p>Tự động áp dụng khi đặt chuyến</p>
+                        </div>
+                        <div class="goride-promo-badge">
+                            🏷️ GORIDE20
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Wallet, Places, Portals) -->
+                <div class="goride-desktop-sidebar-col">
+                    <!-- Wallet Card -->
+                    <section class="goride-wallet-card">
+                        <div class="goride-wallet-left">
+                            <div class="goride-wallet-icon">💳</div>
+                            <div>
+                                <div class="goride-wallet-title">Ví GoRide</div>
+                                <div class="goride-wallet-balance" data-user-balance>350.000 ₫</div>
+                            </div>
+                        </div>
+                        <a href="pages/customer.html" class="goride-wallet-action">
+                            Thanh toán →
+                        </a>
+                    </section>
+
+                    <!-- Saved & Recent Places -->
+                    <section class="goride-recent-card">
+                        <div class="goride-section-header-compact">
+                            <h3 class="goride-section-title">
+                                <span>📍</span> Điểm đến gần đây & Gợi ý
+                            </h3>
+                            <a href="pages/customer.html" style="font-size: 0.75rem; color: var(--goride-teal); text-decoration: none; font-weight: 600;">Xem thêm</a>
+                        </div>
+
+                        <div class="goride-recent-list">
+                            <!-- Home -->
+                            <a href="pages/customer.html?dest=home" class="goride-recent-item" data-preset="home">
+                                <div class="goride-recent-left">
+                                    <div class="goride-recent-icon" style="background:#e0f2fe; color:#0288d1;">🏠</div>
+                                    <div class="goride-recent-info">
+                                        <div class="goride-recent-title">Nhà riêng</div>
+                                        <div class="goride-recent-address">268 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM</div>
+                                    </div>
+                                </div>
+                                <span class="goride-recent-dist">3.2 km</span>
+                            </a>
+
+                            <!-- Office -->
+                            <a href="pages/customer.html?dest=work" class="goride-recent-item" data-preset="work">
+                                <div class="goride-recent-left">
+                                    <div class="goride-recent-icon" style="background:#fef3c7; color:#d97706;">💼</div>
+                                    <div class="goride-recent-info">
+                                        <div class="goride-recent-title">Công ty / Văn phòng</div>
+                                        <div class="goride-recent-address">Landmark 81, 720A Điện Biên Phủ, Bình Thạnh, TP.HCM</div>
+                                    </div>
+                                </div>
+                                <span class="goride-recent-dist">5.8 km</span>
+                            </a>
+
+                            <!-- Ben Thanh Market -->
+                            <a href="pages/customer.html?dest=benthanh" class="goride-recent-item" data-preset="benthanh">
+                                <div class="goride-recent-left">
+                                    <div class="goride-recent-icon" style="background:#f0fdf4; color:#16a34a;">📍</div>
+                                    <div class="goride-recent-info">
+                                        <div class="goride-recent-title">Chợ Bến Thành</div>
+                                        <div class="goride-recent-address">Đường Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM</div>
+                                    </div>
+                                </div>
+                                <span class="goride-recent-dist">0.8 km</span>
+                            </a>
+
+                            <!-- Tan Son Nhat Airport -->
+                            <a href="pages/customer.html?dest=airport" class="goride-recent-item" data-preset="airport">
+                                <div class="goride-recent-left">
+                                    <div class="goride-recent-icon" style="background:#f3e8ff; color:#7c3aed;">✈️</div>
+                                    <div class="goride-recent-info">
+                                        <div class="goride-recent-title">Sân bay Quốc tế Tân Sơn Nhất</div>
+                                        <div class="goride-recent-address">Ga Quốc nội, Đường Trường Sơn, Tân Bình, TP.HCM</div>
+                                    </div>
+                                </div>
+                                <span class="goride-recent-dist">6.2 km</span>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Role Portals Direct Switchers -->
+                    <section class="goride-portals-card" style="background:#ffffff; border-radius:18px; padding:16px; border:1px solid var(--goride-border);">
+                        <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>Cổng truy cập phân hệ</span>
+                            <span class="badge badge-info" style="font-size:0.65rem;">HỆ THỐNG</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                            <a href="pages/customer.html" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:8px 4px; justify-content:center;">
+                                🚗 Khách hàng
+                            </a>
+                            <a href="pages/driver.html" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:8px 4px; justify-content:center;">
+                                👨‍✈️ Tài xế
+                            </a>
+                            <a href="pages/admin.html" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:8px 4px; justify-content:center;">
+                                📊 Quản trị
+                            </a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- App Bottom Navigation Bar (Mobile / Tablet only) -->
+    <nav class="goride-bottom-nav">
+        <a href="index.html" class="goride-nav-item active">
+            <span class="goride-nav-item-icon">🏠</span>
+            <span>Trang chủ</span>
+        </a>
+        <a href="pages/customer.html" class="goride-nav-item">
+            <span class="goride-nav-item-icon">🚗</span>
+            <span>Đặt xe</span>
+        </a>
+        <a href="pages/customer.html#history" class="goride-nav-item">
+            <span class="goride-nav-item-icon">📋</span>
+            <span>Hoạt động</span>
+        </a>
+        <a href="pages/login.html" class="goride-nav-item" id="bottom-nav-account">
+            <span class="goride-nav-item-icon">👤</span>
+            <span>Tài khoản</span>
+        </a>
+    </nav>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/core/api.js"></script>
+    <script src="js/core/session.js"></script>
+    <script src="js/core/router.js"></script>
+    <script src="js/core/demo-data.js"></script>
+    <script src="js/core/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check session status and customize avatar/profile
+            if (typeof sessionManager !== 'undefined') {
+                const user = sessionManager.getCurrentUser();
+                if (user) {
+                    const avatarBadge = document.getElementById('user-profile-badge');
+                    if (avatarBadge) {
+                        avatarBadge.textContent = (user.name || 'U').charAt(0).toUpperCase();
+                    }
+                    const desktopBadge = document.getElementById('desktop-user-badge');
+                    if (desktopBadge) {
+                        desktopBadge.textContent = (user.name || 'U').charAt(0).toUpperCase();
+                    }
+                    const bnavAccount = document.getElementById('bottom-nav-account');
+                    if (bnavAccount) {
+                        bnavAccount.setAttribute('href', user.role === 'driver' ? 'pages/driver.html' : user.role === 'admin' ? 'pages/admin.html' : 'pages/customer.html#account');
+                    }
+                }
+            }
+
+            // Honest check for C++ backend status
+            (async () => {
+                const statusPill = document.getElementById('desktop-backend-status');
+                if (!statusPill) return;
+                try {
+                    if (typeof apiClient !== 'undefined') {
+                        const res = await apiClient.get('/health', { timeout: 2000 });
+                        if (res && res.ok) {
+                            statusPill.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span> <span>Backend C++: Trực tuyến</span>';
+                            statusPill.classList.add('online');
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Offline backend as expected
+                }
+                statusPill.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444;"></span> <span>Backend C++: Ngoại tuyến</span>';
+                statusPill.classList.remove('online');
+            })();
+        });
+    </script>
+</body>
+</html>

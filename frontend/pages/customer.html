@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt xe | GoRide — Đặt xe dễ dàng, đi mọi hành trình.</title>
+    <meta name="description" content="Đặt chuyến xe GoRide nhanh chóng - Mô phỏng tìm tài xế k-NN với R-Tree và dẫn đường Dijkstra.">
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        /* Customer Portal Local Overrides */
+        .goride-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .goride-dialog-overlay.active {
+            display: flex;
+        }
+
+        .goride-dialog-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+    </style>
+</head>
+<body class="customer-body">
+    <div class="goride-customer-app" id="customer-app">
+        <!-- Desktop / App Top Header -->
+        <header class="goride-desktop-customer-header">
+            <div class="goride-customer-header-left">
+                <a href="../index.html" class="goride-customer-brand" title="Về trang chủ GoRide">
+                    <span>🚗</span> GoRide
+                </a>
+                <div class="goride-step-breadcrumb" id="header-step-breadcrumb">
+                    <span id="breadcrumb-step">Lộ trình</span>
+                    <span style="opacity:0.5;">•</span>
+                    <span style="font-weight:700;" id="breadcrumb-title">Chọn điểm đón & điểm đến</span>
+                </div>
+            </div>
+
+            <div class="goride-customer-header-right">
+                <!-- Honest Backend Status Pill -->
+                <div class="goride-backend-status-pill" id="backend-status-indicator" title="Trạng thái kết nối máy chủ C++">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444;" id="backend-status-dot"></span>
+                    <span id="backend-status-text">Backend C++: Ngoại tuyến</span>
+                </div>
+
+                <a href="../index.html" class="btn btn-ghost btn-sm" style="color:#ffffff; border:1px solid rgba(255,255,255,0.3); border-radius:14px; padding:4px 12px; font-size:0.75rem;">
+                    ← Trang chủ
+                </a>
+            </div>
+        </header>
+
+        <!-- Customer Split Layout (Sidebar Panel + Map Viewport) -->
+        <div class="goride-customer-split-layout">
+            <!-- Left Sidebar Panel: Contains Booking Steps Views -->
+            <aside class="goride-sidebar-panel" id="customer-sidebar-panel">
+                <!-- ============================================================== -->
+                <!-- VIEW 1: LOCATION SEARCH SHEET (ref-02)                          -->
+                <!-- ============================================================== -->
+                <div class="goride-view-layer active" id="view-search">
+                    <div class="goride-search-view">
+                        <!-- Search Header -->
+                        <div class="goride-search-header">
+                            <div class="goride-search-header-top">
+                                <a href="../index.html" class="goride-back-btn" title="Trở về trang chủ">
+                                    ←
+                                </a>
+                                <div class="goride-search-header-title">Chọn lộ trình di chuyển</div>
+                                <div class="goride-city-badge">
+                                    <span>🇻🇳</span> TP. Hồ Chí Minh
+                                </div>
+                            </div>
+
+                            <!-- Origin & Destination Inputs (ref-02) -->
+                            <div class="goride-search-inputs-box">
+                                <!-- Pickup Input -->
+                                <div class="goride-search-input-row">
+                                    <span class="goride-input-dot goride-input-dot-pickup"></span>
+                                    <input type="text" id="input-pickup" class="goride-search-field" placeholder="Điểm đón (Vị trí hiện tại)" value="Vị trí hiện tại (Chợ Bến Thành, Q.1)">
+                                    <button type="button" class="goride-search-clear" id="btn-clear-pickup" title="Xóa điểm đón">&times;</button>
+                                </div>
+
+                                <div class="goride-search-divider"></div>
+
+                                <!-- Destination Input -->
+                                <div class="goride-search-input-row">
+                                    <span class="goride-input-dot goride-input-dot-dest"></span>
+                                    <input type="text" id="input-destination" class="goride-search-field" placeholder="Bạn muốn đến đâu? (Nhập địa chỉ, tên địa điểm...)" autofocus>
+                                    <button type="button" class="goride-search-clear" id="btn-clear-dest" title="Xóa điểm đến" style="display:none;">&times;</button>
+                                </div>
+
+                                <!-- Swap Locations Button -->
+                                <button type="button" class="goride-search-swap-btn" id="btn-swap-locations" title="Đổi điểm đón và điểm đến">
+                                    ⇅
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pick on Map Quick Action Bars (Pickup & Destination) -->
+                        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;">
+                            <div class="goride-pick-on-map-bar" id="btn-trigger-map-pickup">
+                                <span>📍</span>
+                                <span>Chọn điểm đón trực tiếp trên bản đồ</span>
+                                <span style="margin-left:auto;">→</span>
+                            </div>
+                            <div class="goride-pick-on-map-bar" id="btn-trigger-map-dest" style="background:#fef2f2; border-color:#fecaca; color:#b91c1c;">
+                                <span>🏁</span>
+                                <span>Chọn điểm đến trực tiếp trên bản đồ</span>
+                                <span style="margin-left:auto;">→</span>
+                            </div>
+                        </div>
+
+                        <!-- Filtered Suggestions List (ref-02) -->
+                        <div class="goride-suggestions-list" id="suggestions-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- VIEW 2: CONFIRM PICKUP LOCATION ON MAP (ref-03)                -->
+                <!-- ============================================================== -->
+                <div class="goride-view-layer" id="view-pickup-confirm">
+                    <!-- Top Bar inside Sidebar (Desktop) / Floating (Mobile) -->
+                    <div class="goride-map-top-bar">
+                        <button type="button" class="goride-back-btn" id="btn-back-to-search" title="Quay lại">
+                            ←
+                        </button>
+                        <div class="goride-map-title-card">
+                            <span>📍</span>
+                            <span>Xác nhận điểm đón</span>
+                        </div>
+                        <div style="width: 38px;"></div>
+                    </div>
+
+                    <div class="goride-pickup-hint-card">
+                        <div style="background:#f0fdfa; border:1px solid #ccfbf1; border-radius:12px; padding:10px 14px; font-size:0.8rem; color:#0f766e;">
+                            💡 Kéo hoặc di chuyển bản đồ để ghim chính xác vị trí tài xế sẽ đón bạn.
+                        </div>
+                    </div>
+
+                    <!-- Bottom Confirm Sheet Content (ref-03) -->
+                    <div class="goride-confirm-pickup-sheet">
+                        <div style="font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:8px;">Tùy chọn chuyến đi:</div>
+                        <!-- Preference Pills -->
+                        <div class="goride-preference-pills" style="margin-bottom:16px;">
+                            <button type="button" class="goride-pref-pill" data-pref="quiet">
+                                <span>🤫</span>
+                                <span>Chuyến đi yên lặng</span>
+                            </button>
+                            <button type="button" class="goride-pref-pill" data-pref="luggage">
+                                <span>🧳</span>
+                                <span>Có hành lý</span>
+                            </button>
+                            <button type="button" class="goride-pref-pill" data-pref="aircon">
+                                <span>❄️</span>
+                                <span>Máy lạnh mát</span>
+                            </button>
+                        </div>
+
+                        <!-- Confirm CTA Button -->
+                        <button type="button" class="goride-btn-confirm" id="btn-confirm-pickup-cta">
+                            XÁC NHẬN ĐIỂM ĐÓN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- VIEW 3: VEHICLE SELECTION & ROUTE PREVIEW (ref-04)             -->
+                <!-- ============================================================== -->
+                <div class="goride-view-layer" id="view-vehicle-select">
+                    <!-- Top Route Summary Bar (ref-04) -->
+                    <div class="goride-route-summary-bar">
+                        <button type="button" class="goride-back-btn" id="btn-back-to-pickup" title="Sửa điểm đón">
+                            ←
+                        </button>
+                        <div class="goride-route-stops-summary">
+                            <div class="goride-stop-pill">
+                                <span style="color:#0288d1;">●</span>
+                                <span id="route-sum-pickup">Chợ Bến Thành, Quận 1</span>
+                            </div>
+                            <div class="goride-stop-pill">
+                                <span style="color:#ef4444;">■</span>
+                                <strong id="route-sum-dest">Landmark 81, Bình Thạnh</strong>
+                            </div>
+                        </div>
+                        <button type="button" class="goride-change-route-btn" id="btn-change-route">
+                            Thay đổi
+                        </button>
+                    </div>
+
+                    <!-- Sheet: Vehicle Selection List (ref-04) -->
+                    <div class="goride-vehicle-sheet">
+                        <div class="goride-sheet-handle"></div>
+
+                        <!-- Honest Route / Backend Notice Banner -->
+                        <div class="goride-honest-route-banner" id="backend-routing-banner">
+                            <span>⚠️</span>
+                            <div>
+                                <strong>Chưa có dữ liệu tuyến đường thực tế từ Backend C++:</strong> 
+                                Bản đồ đang hiển thị đường nối định hướng. Thuật toán tìm đường Dijkstra sẽ được tính toán trực tiếp từ máy chủ C++ khi kết nối.
+                            </div>
+                        </div>
+
+                        <!-- Surge / Demand Notice -->
+                        <div class="goride-surge-banner">
+                            <span>⚡</span>
+                            <span>Nhu cầu cao tại trung tâm TP.HCM. Giá cước minh bạch nhất.</span>
+                        </div>
+
+                        <!-- Vehicle Choices List -->
+                        <div class="goride-vehicle-list" id="vehicle-options-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Payment Method & Promo Code Tag (ref-04) -->
+                        <div class="goride-payment-row">
+                            <div class="goride-payment-selector" id="btn-toggle-payment">
+                                <span>💵</span>
+                                <span id="current-payment-method">Tiền mặt</span>
+                                <span style="font-size:0.75rem; color:#94a3b8;">▼</span>
+                            </div>
+                            <div class="goride-promo-tag-btn" id="btn-promo-tag">
+                                🏷️ GORIDE20 (-20%)
+                            </div>
+                        </div>
+
+                        <!-- Solicitar CTA Button (ref-04) -->
+                        <button type="button" class="goride-btn-solicitar" id="btn-solicitar-ride">
+                            <span id="solicitar-text">Đặt chuyến GoRide • 45.000 ₫</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- VIEW 4: LIVE TRIP TRACKING & DRIVER ARRIVAL (ref-05/06)        -->
+                <!-- ============================================================== -->
+                <div class="goride-view-layer" id="view-tracking">
+                    <!-- Top Status Bar (ref-05/06) -->
+                    <div class="goride-tracking-top-bar">
+                        <button type="button" class="goride-back-btn" id="btn-tracking-home" title="Về chọn dịch vụ">
+                            ←
+                        </button>
+                        <div class="goride-tracking-status-pill">
+                            <span id="tracking-status-icon">🚗</span>
+                            <span id="tracking-status-text">Đang tìm tài xế gần bạn...</span>
+                        </div>
+                    </div>
+
+                    <!-- Driver Card Bottom Sheet (ref-05/06) -->
+                    <div class="goride-driver-sheet" id="tracking-driver-sheet">
+                        <div class="goride-sheet-handle"></div>
+
+                        <!-- Driver Profile & Car Details -->
+                        <div class="goride-driver-profile-row">
+                            <div class="goride-driver-info-left">
+                                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80" alt="Tài xế" class="goride-driver-avatar" id="track-driver-avatar">
+                                <div class="goride-driver-names">
+                                    <span class="goride-driver-title-label">Tài xế GoRide</span>
+                                    <span class="goride-driver-name" id="track-driver-name">Trần Văn Bình</span>
+                                    <span class="goride-driver-rating" id="track-driver-rating">
+                                        ★ 4.88 <span>(428 chuyến)</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="goride-driver-car-right">
+                                <span class="goride-plate-badge" id="track-driver-plate">51G-889.24</span>
+                                <span class="goride-car-model-text" id="track-driver-model">Toyota Vios 2023</span>
+                            </div>
+                        </div>
+
+                        <!-- Progression Timeline -->
+                        <div class="goride-progression-bar">
+                            <div class="goride-prog-step active" id="prog-step-1">
+                                <span>●</span> Đã ghép nối
+                            </div>
+                            <span>➔</span>
+                            <div class="goride-prog-step" id="prog-step-2">
+                                <span>●</span> Đang đến
+                            </div>
+                            <span>➔</span>
+                            <div class="goride-prog-step" id="prog-step-3">
+                                <span>●</span> Đang đi
+                            </div>
+                            <span>➔</span>
+                            <div class="goride-prog-step" id="prog-step-4">
+                                <span>●</span> Đến nơi
+                            </div>
+                        </div>
+
+                        <!-- Contact & Action Buttons -->
+                        <div class="goride-tracking-actions">
+                            <button type="button" class="goride-action-btn call-btn" id="btn-call-driver">
+                                <span>📞</span> Gọi điện
+                            </button>
+                            <button type="button" class="goride-action-btn chat-btn" id="btn-chat-driver">
+                                <span>💬</span> Nhắn tin
+                            </button>
+                            <button type="button" class="goride-action-btn cancel-btn" id="btn-cancel-trip">
+                                <span>❌</span> Hủy chuyến
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- VIEW 5: TRIP HISTORY MODAL VIEW (#history)                     -->
+                <!-- ============================================================== -->
+                <div class="goride-view-layer" id="view-history">
+                    <div class="goride-search-view">
+                        <div class="goride-search-header">
+                            <div class="goride-search-header-top">
+                                <button type="button" class="goride-back-btn" id="btn-close-history">
+                                    ←
+                                </button>
+                                <div class="goride-search-header-title">Lịch sử chuyến đi</div>
+                                <button type="button" class="btn btn-ghost btn-sm" id="btn-refresh-history">
+                                    Làm mới
+                                </button>
+                            </div>
+                        </div>
+                        <div class="goride-suggestions-list" id="history-trips-container" style="padding-top:12px;">
+                            <!-- Trip history cards populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Map Viewport: Interactive Leaflet Map -->
+            <section class="goride-map-viewport" id="customer-map-viewport">
+                <!-- Interactive Leaflet Map Container (Base Layer) -->
+                <div id="customer-map-container"></div>
+
+                <!-- Center Pin Callout (ref-03) (Visible when confirming pickup on map) -->
+                <div class="goride-center-pin-badge" id="center-pin-badge" style="display:none;">
+                    <div class="goride-pin-callout" id="center-pin-address">
+                        Đang xác định vị trí...
+                    </div>
+                    <svg class="goride-pin-center-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#00897b"/>
+                        <circle cx="12" cy="9" r="2.5" fill="#ffffff"/>
+                    </svg>
+                </div>
+
+                <!-- Radar Pulse Animation (R-Tree matching state) -->
+                <div class="goride-radar-container" id="tracking-radar" style="display:none;">
+                    <div class="goride-radar-pulse"></div>
+                    <div class="goride-radar-text">
+                        🌳 [BẢN XEM TRƯỚC] Mô phỏng ghép xe k-NN & R-Tree
+                    </div>
+                </div>
+
+                <!-- Floating Recenter FAB Button -->
+                <div class="goride-map-fab-stack">
+                    <button type="button" class="goride-map-fab" id="btn-gps-recenter" title="Định vị vị trí hiện tại">
+                        🎯
+                    </button>
+                    <button type="button" class="goride-map-fab" id="btn-share-trip" title="Chia sẻ lộ trình" style="display:none;">
+                        🔗
+                    </button>
+                    <button type="button" class="goride-map-fab" id="btn-track-recenter" title="Xem xe tài xế" style="display:none;">
+                        🚗
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- In-App Dialog Overlay (Chat / Call simulation / Rating) -->
+        <div class="goride-dialog-overlay" id="dialog-overlay">
+            <div class="goride-dialog-card" id="dialog-card-content">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/core/api.js"></script>
+    <script src="../js/core/geocoder.js"></script>
+    <script src="../js/core/session.js"></script>
+    <script src="../js/core/router.js"></script>
+    <script src="../js/core/demo-data.js"></script>
+    <script src="../js/core/app.js"></script>
+    <script src="../js/map/map-controller.js"></script>
+    <script src="../js/map/map-renderer.js"></script>
+    <script src="../js/customer/customer.js"></script>
+</body>
+</html>
